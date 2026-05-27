@@ -14,6 +14,8 @@ from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from entities.enemy import Enemy
 from entities.moon import Moon
+from sprite_loader import AnimatedSprite
+from systems.audio import play_music, stop_music, play_sfx
 
 
 def is_point_in_polygon(point, polygon):
@@ -84,7 +86,6 @@ def run_death_screen(screen, clock):
 
 
 def run_level2(screen, clock, potion_inv=None, **kwargs):
-
     # Use passed potion inventory or create new one
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -93,6 +94,14 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
 
     MOON_COLOR = (200, 220, 255, 80)
     PLAYER_COL = (180, 210, 255)
+
+    wrench_img = pygame.image.load(
+        "assets/sprites/wrench.png"
+    ).convert_alpha()
+
+    wrench_img = pygame.transform.scale(
+        wrench_img, (24, 24)
+    )
 
     try:
         font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
@@ -117,10 +126,17 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
 
     # PLAYER
     player_pos   = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
-    PLAYER_SIZE  = 28
+    PLAYER_SIZE  = 48
     PLAYER_SPEED = 4
     health       = 100
     max_health   = 100
+
+    player_sprites = AnimatedSprite(
+        "assets/sprites/player.png",
+        num_frames=4,
+        frame_duration=8,
+        scale=1
+    )
 
     # FLASHLIGHT
     FLASHLIGHT_RADIUS = 500
@@ -202,6 +218,8 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
     # EXIT
     exit_door = pygame.Rect(ROOM_RIGHT - 10, HEIGHT//2 - 40, 20, 80)
     door_open = False
+
+    game_surf = pygame.Surface((WIDTH, HEIGHT))
 
     running = True
     while running:
@@ -334,7 +352,8 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
                             "vel":  pygame.Vector2(
                                         dx_w/dist * WRENCH_SPEED,
                                         dy_w/dist * WRENCH_SPEED),
-                            "life": 30
+                            "life": 30,
+                            "rotation": 0
                         })
 
         # MOVEMENT
@@ -345,6 +364,9 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += PLAYER_SPEED
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= PLAYER_SPEED
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += PLAYER_SPEED
+
+        moving = (dx != 0 or dy != 0)
+        player_sprites.update(moving)
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -441,6 +463,7 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
         for w in wrenches[:]:
             w["pos"] += w["vel"]
             w["life"] -= 1
+            w["rotation"] += 20
 
             wrench_rect = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
             in_bounds   = valid_room.contains(wrench_rect)
@@ -472,12 +495,17 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
             moon_triggered = True
             moon.trigger()
             door_open = True
+
             run_dialogue(screen, clock, [
                 ("All power restored.",     (200, 200, 200)),
                 ("...",                     (200, 200, 200)),
                 ("Something is wrong.",     (200, 80,  80)),
                 ("DON'T LOOK AT THE MOON.", (255, 50,  50)),
             ])
+
+            stop_music()
+            play_music("assets/audio/moon_theme.ogg",
+                       loop=True, volume=0.5)
 
         moon.update()
 
@@ -495,7 +523,6 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
 
         # DRAW
         shake_x, shake_y = moon.get_shake_offset()
-        game_surf = pygame.Surface((WIDTH, HEIGHT))
         game_surf.fill((5, 5, 15))
 
         # Room background
@@ -598,17 +625,27 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
 
         # Wrench on ground
         if wrench_on_ground:
-            pygame.draw.circle(game_surf, (180, 140, 80),
-                               (int(wrench_on_ground.x),
-                                int(wrench_on_ground.y)), 7)
-            pygame.draw.circle(game_surf, (220, 180, 80),
-                               (int(wrench_on_ground.x),
-                                int(wrench_on_ground.y)), 10, 2)
+            game_surf.blit(
+                wrench_img,
+                (
+                    int(wrench_on_ground.x - 12),
+                    int(wrench_on_ground.y - 12)
+                )
+            )
 
         # Flying wrenches
         for w in wrenches:
-            pygame.draw.circle(game_surf, (180, 140, 80),
-                               (int(w["pos"].x), int(w["pos"].y)), 5)
+            rotated = pygame.transform.rotate(
+                wrench_img,
+                w["rotation"]
+            )
+
+            rect = rotated.get_rect(center=(
+                int(w["pos"].x),
+                int(w["pos"].y)
+            ))
+
+            game_surf.blit(rotated, rect)
 
         # Moon flood overlay
         moon.draw_flood(game_surf)
@@ -617,13 +654,12 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
                         CONE_ANGLE, FLASHLIGHT_RADIUS)
 
-        # Player
-        pygame.draw.rect(game_surf, PLAYER_COL,
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE))
-        pygame.draw.rect(game_surf, (255, 255, 255),
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE), 2)
+        # Player sprite
+        player_sprites.draw(
+            game_surf,
+            int(player_pos.x),
+            int(player_pos.y)
+        )
 
         # Glitch
         if glitch_intensity > 0:

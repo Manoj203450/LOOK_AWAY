@@ -6,21 +6,51 @@ import math
 
 class FuseBox:
     def __init__(self, x, y):
-        self.rect     = pygame.Rect(x, y, 40, 40)
-        self.fixed    = False
-        self.color    = (180, 160, 40)
+
+        self.rect  = pygame.Rect(x, y, 48, 48)
+        self.fixed = False
+
+        self.broken_image = pygame.image.load(
+            "assets/sprites/fusebox_broken.png"
+        ).convert_alpha()
+
+        self.fixed_image = pygame.image.load(
+            "assets/sprites/fusebox_fixed.png"
+        ).convert_alpha()
+
+        self.broken_image = pygame.transform.scale(
+            self.broken_image,
+            (self.rect.width, self.rect.height)
+        )
+
+        self.fixed_image = pygame.transform.scale(
+            self.fixed_image,
+            (self.rect.width, self.rect.height)
+        )
 
     def is_near(self, pcx, pcy, radius=60):
-        center = pygame.Vector2(self.rect.centerx, self.rect.centery)
-        return pygame.Vector2(pcx, pcy).distance_to(center) < radius
+
+        center = pygame.Vector2(
+            self.rect.centerx,
+            self.rect.centery
+        )
+
+        return pygame.Vector2(
+            pcx, pcy
+        ).distance_to(center) < radius
 
     def draw(self, screen, font_small):
-        color = (80, 180, 80) if self.fixed else self.color
-        pygame.draw.rect(screen, color, self.rect)
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
-        bolt = font_small.render("Z", True, (255, 255, 255))
-        screen.blit(bolt, (self.rect.x + 10, self.rect.y + 10))
 
+        if self.fixed:
+            screen.blit(
+                self.fixed_image,
+                self.rect.topleft
+            )
+        else:
+            screen.blit(
+                self.broken_image,
+                self.rect.topleft
+            )
 
 def run_fuse_puzzle(screen, clock):
     WIDTH, HEIGHT = screen.get_size()

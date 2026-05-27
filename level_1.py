@@ -9,6 +9,7 @@ from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.pause import run_pause
 from systems.potion import PotionInventory
+from sprite_loader import AnimatedSprite
 
 
 def is_point_in_polygon(point, polygon):
@@ -101,10 +102,17 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
     # PLAYER
     player_pos   = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
-    PLAYER_SIZE  = 28
+    PLAYER_SIZE  = 48
     PLAYER_SPEED = 4
     health       = 100
     max_health   = 100
+
+    player_sprite = AnimatedSprite(
+        "assets/sprites/player.png",
+        num_frames=4,
+        frame_duration=8,
+        scale=1
+    )
 
     # FLASHLIGHT
     FLASHLIGHT_RADIUS = 500
@@ -185,6 +193,9 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += PLAYER_SPEED
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= PLAYER_SPEED
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += PLAYER_SPEED
+
+        moving = (dx != 0 or dy != 0)
+        player_sprite.update(moving)
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -308,13 +319,12 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
                         CONE_ANGLE, FLASHLIGHT_RADIUS)
 
-        # Player AFTER flashlight - always visible
-        pygame.draw.rect(game_surf, PLAYER_COL,
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE))
-        pygame.draw.rect(game_surf, WHITE,
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE), 2)
+        # Player sprite
+        player_sprite.draw(
+            game_surf,
+            int(player_pos.x),
+            int(player_pos.y)
+        )
 
         # Glitch
         if glitch_intensity > 0:

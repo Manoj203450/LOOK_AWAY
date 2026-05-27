@@ -1,12 +1,20 @@
 import pygame
 import math
+from sprite_loader import AnimatedSprite
 
 class Enemy:
     def __init__(self, x, y):
         self.pos = pygame.Vector2(x, y)
-        self.size = 28
+        self.size = 48
         self.speed = 1.8 # Change this if enemy is too fast
         self.color = (180, 50, 50)
+
+        self.sprite = AnimatedSprite(
+            "assets/sprites/enemy.png",
+            num_frames=4,
+            frame_duration=10,
+            scale=1
+        )
 
         # The AI state
         self. state = "patrol"
@@ -29,6 +37,7 @@ class Enemy:
 
         if self.state == "stunned":
             self.color = (80, 80, 80)
+            self.sprite.update(False)
             self.stun_timer -= 1
             if self.stun_timer <= 0:
                 self.state = "patrol"
@@ -41,6 +50,7 @@ class Enemy:
                 self.state = "patrol"
 
         if self.state == "chase":
+            self.sprite.update(True)
             self.color = (220, 30, 30)
             direction = pygame.Vector2(pcx - ecx, pcy - ecy)
             if direction.length() > 0:
@@ -51,6 +61,7 @@ class Enemy:
                 self.pos = new_pos
 
         elif self.state == "patrol":
+            self.sprite.update(True)
             self.color = (180, 50, 50)
             target = self.patrol_points[self.patrol_index]
             direction = target - self.pos
@@ -83,8 +94,11 @@ class Enemy:
         self.color = (80, 80, 80)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color,
-                         (self.pos.x, self.pos.y, self.size, self.size))
+        self.sprite.draw(
+            screen,
+            int(self.pos.x),
+            int(self.pos.y)
+        )
 
         # Indicator that shows state of enemy
         try:

@@ -1,14 +1,18 @@
 import pygame
 import math
+from sprite_loader import WeepingAngelSprite
 
 class WeepingAngel:
     def __init__(self, x, y):
         self.pos = pygame.Vector2(x, y)
-        self.size = 28
-        self.color = (150, 150, 200)
+        self.size = 48
         self.frozen = False
         self.state = "stack"
         self.speed = 2.5
+        self.sprite = WeepingAngelSprite(
+            "assets/sprites/weeping_angel.png",
+            scale=1
+        )
 
     def update(self, player_pos, player_size, angle,
                cone_angle, flashlight_radius, valid_rooms=None):
@@ -31,12 +35,10 @@ class WeepingAngel:
         if in_flashlight:
             self.frozen = True
             self.state  = "frozen"
-            self.color  = (180, 180, 220)
             return
 
         self.frozen = False
         self.state  = "stalk"
-        self.color  = (100, 100, 180)
 
         direction = pygame.Vector2(pcx - ecx, pcy - ecy)
         if direction.length() > 0:
@@ -49,19 +51,13 @@ class WeepingAngel:
             self.pos = new_pos
 
     def draw(self, screen):
-        cx = self.pos.x + self.size // 2
-        cy = self.pos.y + self.size // 2
-        s = self.size // 2
 
-        # diamond shape
-        diamond = [
-            (cx, cy - s),
-            (cx + s, cy),
-            (cx, cy + s),
-            (cx - s, cy),
-        ]
-        pygame.draw.polygon(screen, self.color, diamond)
-        pygame.draw.polygon(screen, (200, 200, 200), diamond, 2)
+        self.sprite.draw(
+            screen,
+            int(self.pos.x),
+            int(self.pos.y),
+            frozen=self.frozen
+        )
 
         try:
             font = pygame.font.SysFont("courier", 12)

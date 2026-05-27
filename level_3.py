@@ -12,6 +12,7 @@ from systems.potion import PotionInventory
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from entities.weeping_angel import WeepingAngel
+from sprite_loader import AnimatedSprite
 
 
 def is_point_in_polygon(point, polygon):
@@ -90,9 +91,23 @@ def run_level3(screen, clock, start_with_wrench=False,
 
     WIDTH, HEIGHT = screen.get_size()
 
-    PLAYER_COL = (180, 210, 255)
     WHITE      = (220, 220, 220)
     RED        = (200, 40,  40)
+
+    player_sprites = AnimatedSprite(
+        "assets/sprites/player.png",
+        num_frames=4,
+        frame_duration=8,
+        scale=1
+    )
+
+    wrench_img = pygame.image.load(
+        "assets/sprites/wrench.png"
+    ).convert_alpha()
+
+    wrench_img = pygame.transform.scale(
+        wrench_img, (24, 24)
+    )
 
     try:
         font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
@@ -107,17 +122,17 @@ def run_level3(screen, clock, start_with_wrench=False,
     ROOM_C  = pygame.Rect(40,  400, 380, 280)   # bottom left
     ROOM_D  = pygame.Rect(500, 400, 420, 280)   # bottom right (exit)
 
-    CORR_AB = pygame.Rect(420, 130, 80,  80)    # A → B
-    CORR_AC = pygame.Rect(130, 320, 80,  80)    # A → C
-    CORR_BD = pygame.Rect(590, 320, 80,  80)    # B → D
-    CORR_CD = pygame.Rect(420, 490, 80,  80)    # C → D
+    CORR_AB = pygame.Rect(415, 100, 90,  130)    # A → B
+    CORR_AC = pygame.Rect(100, 315, 130, 90)    # A → C
+    CORR_BD = pygame.Rect(575, 315, 130, 90)    # B → D
+    CORR_CD = pygame.Rect(415, 475, 90,  130)    # C → D
 
     all_rooms = [ROOM_A, ROOM_B, ROOM_C, ROOM_D,
                  CORR_AB, CORR_AC, CORR_BD, CORR_CD]
 
     # PLAYER
     player_pos   = pygame.Vector2(ROOM_A.x + 60, ROOM_A.centery)
-    PLAYER_SIZE  = 28
+    PLAYER_SIZE  = 48
     PLAYER_SPEED = 4
     health       = 100
     max_health   = 100
@@ -197,6 +212,10 @@ def run_level3(screen, clock, start_with_wrench=False,
     question_asked     = False
     fuse_b_dialogue    = False
     exit_dialogue_done = False
+
+    # DRAW
+    game_surf = pygame.Surface((WIDTH, HEIGHT))
+    game_surf.fill((5, 5, 15))
 
     running = True
     while running:
@@ -301,7 +320,8 @@ def run_level3(screen, clock, start_with_wrench=False,
                             "vel":  pygame.Vector2(
                                         dx_w/dist * WRENCH_SPEED,
                                         dy_w/dist * WRENCH_SPEED),
-                            "life": 30
+                            "life": 30,
+                            "rotation": 0
                         })
 
         # MOVEMENT
@@ -313,18 +333,35 @@ def run_level3(screen, clock, start_with_wrench=False,
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= PLAYER_SPEED
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += PLAYER_SPEED
 
+        moving = (dx != 0 or dy != 0)
+        player_sprites.update(moving)
+
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
 
         # Wall collision
         def in_valid_area(x, y):
-            r = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
-            return any(room.contains(r) for room in all_rooms)
+            test_rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
+            # Player is valid if ALL four corners are inside any room
+            corners = [
+                (test_rect.left, test_rect.top),
+                (test_rect.right, test_rect.top),
+                (test_rect.left, test_rect.bottom),
+                (test_rect.right, test_rect.bottom),
+            ]
+            return all(
+                any(room.collidepoint(cx, cy) for room in all_rooms)
+                for cx, cy in corners
+            )
 
         if not in_valid_area(new_x, player_pos.y):
             new_x = player_pos.x
         if not in_valid_area(player_pos.x, new_y):
             new_y = player_pos.y
+
+        # Hard clamp to screen
+        new_x = max(0, min(WIDTH - PLAYER_SIZE, new_x))
+        new_y = max(0, min(HEIGHT - PLAYER_SIZE, new_y))
 
         # Stationary box collision
         for sb in stat_boxes:
@@ -333,11 +370,12 @@ def run_level3(screen, clock, start_with_wrench=False,
 
         # Movable box push
         moving_rect = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
-        cur_bounds  = room_bounds_a if in_room_a else room_bounds_c
         for mb in mov_boxes:
             old_bx = mb.rect.x
             old_by = mb.rect.y
-            mb.push(dx, dy, moving_rect, cur_bounds)
+            mb.push(dx, dy, moving_rect,
+                    room_bounds_a,  # kept for fallback
+                    valid_rooms=all_rooms)  # ← pass all rooms
             for sb in stat_boxes:
                 if mb.rect.colliderect(sb.rect):
                     mb.rect.x = old_bx
@@ -346,25 +384,25 @@ def run_level3(screen, clock, start_with_wrench=False,
                     new_y = player_pos.y
 
             if mb.rect.x == old_bx and mb.rect.y == old_by:
-                # Box is stuck - check if player is trying to walk into it
                 player_next = pygame.Rect(
                     new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
                 if player_next.colliderect(mb.rect):
                     new_x = player_pos.x
                     new_y = player_pos.y
 
-            for mb in mov_boxes:
-                player_next = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
-                if player_next.colliderect(mb.rect):
-                    # Try x and y separately to allow sliding along the box
-                    player_next_x = pygame.Rect(
-                        new_x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
-                    player_next_y = pygame.Rect(
-                        player_pos.x, new_y, PLAYER_SIZE, PLAYER_SIZE)
-                    if player_next_x.colliderect(mb.rect):
-                        new_x = player_pos.x
-                    if player_next_y.colliderect(mb.rect):
-                        new_y = player_pos.y
+        # Hard block
+        for mb in mov_boxes:
+            player_next = pygame.Rect(
+                new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
+            if player_next.colliderect(mb.rect):
+                player_next_x = pygame.Rect(
+                    new_x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
+                player_next_y = pygame.Rect(
+                    player_pos.x, new_y, PLAYER_SIZE, PLAYER_SIZE)
+                if player_next_x.colliderect(mb.rect):
+                    new_x = player_pos.x
+                if player_next_y.colliderect(mb.rect):
+                    new_y = player_pos.y
 
         player_pos.x = new_x
         player_pos.y = new_y
@@ -391,6 +429,7 @@ def run_level3(screen, clock, start_with_wrench=False,
         for w in wrenches[:]:
             w["pos"] += w["vel"]
             w["life"] -= 1
+            w["rotation"] += 20
 
             wrench_rect = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
             in_bounds   = any(room.contains(wrench_rect)
@@ -428,15 +467,25 @@ def run_level3(screen, clock, start_with_wrench=False,
                 if not blocked:
                     taking_damage = True
 
+        # Beam check with box blocking
         for beam in moon_beams_b:
             if is_point_in_polygon(pygame.Vector2(pcx, pcy), beam):
-                taking_damage = True
+                blocked = False
+                # Check boxes against beam
+                for mb in mov_boxes:
+                    if mb.blocks_beam(player_rect_cur, beam):
+                        blocked = True
+                for sb in stat_boxes:
+                    if sb.blocks_beam(player_rect_cur, beam):
+                        blocked = True
+                if not blocked:
+                    taking_damage = True
 
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
             health -= 0.3
         else:
-            glitch_intensity = max(0, glitch_intensity - 1)
+            glitch_intensity = max(0, glitch_intensity - 4)
         health = max(0, health)
 
         # DOOR CHECK
@@ -482,10 +531,6 @@ def run_level3(screen, clock, start_with_wrench=False,
         if health <= 0:
             run_death_screen(screen, clock)
             return
-
-        # DRAW
-        game_surf = pygame.Surface((WIDTH, HEIGHT))
-        game_surf.fill((5, 5, 15))
 
         # Draw rooms
         def draw_room(surf, rect, wall_color=(50, 55, 70)):
@@ -552,30 +597,39 @@ def run_level3(screen, clock, start_with_wrench=False,
 
         # Wrench on ground
         if wrench_on_ground:
-            pygame.draw.circle(game_surf, (180, 140, 80),
-                               (int(wrench_on_ground.x),
-                                int(wrench_on_ground.y)), 7)
-            pygame.draw.circle(game_surf, (220, 180, 80),
-                               (int(wrench_on_ground.x),
-                                int(wrench_on_ground.y)), 10, 2)
+            if wrench_on_ground:
+                game_surf.blit(
+                    wrench_img,
+                    (
+                        int(wrench_on_ground.x - 12),
+                        int(wrench_on_ground.y - 12)
+                    )
+                )
 
         # Flying wrenches
         for w in wrenches:
-            pygame.draw.circle(game_surf, (180, 140, 80),
-                               (int(w["pos"].x), int(w["pos"].y)), 5)
+            rotated = pygame.transform.rotate(
+                wrench_img,
+                w["rotation"]
+            )
+
+            rect = rotated.get_rect(center=(
+                int(w["pos"].x),
+                int(w["pos"].y)
+            ))
+
+            game_surf.blit(rotated, rect)
 
         # Flashlight
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
                         CONE_ANGLE, FLASHLIGHT_RADIUS)
 
-        # Player
-        pygame.draw.rect(game_surf, PLAYER_COL,
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE))
-        pygame.draw.rect(game_surf, (255, 255, 255),
-                         (player_pos.x, player_pos.y,
-                          PLAYER_SIZE, PLAYER_SIZE), 2)
-
+        # Player sprite
+        player_sprites.draw(
+            game_surf,
+            int(player_pos.x),
+            int(player_pos.y)
+        )
         # Glitch
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
