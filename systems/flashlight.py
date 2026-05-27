@@ -17,6 +17,6 @@ def draw_flashlight(screen, darkness, pcx, pcy, angle,
     pygame.draw.polygon(darkness, WHITE, cone_points)
     darkness.set_colorkey(WHITE)
 
-    darkness.set_alpha(210)
+    darkness.set_alpha(254)
 
     screen.blit(darkness, (0, 0))
