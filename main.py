@@ -5,6 +5,7 @@ from intro import run_intro
 from level_1 import run_level1
 from level_2 import run_level2
 from level_3 import run_level3
+from level_4 import run_level4
 from level_6 import run_level6
 from level_select import run_level_select
 from credits import run_credits
@@ -71,7 +72,19 @@ def run_game_from(level, gives_wrench, screen, clock):
             return
         level = 4
 
-    # levels 4 and 5 handled by other team members
+    if level <= 4:
+        stop_music()
+        play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
+        result = play_level(run_level4, screen, clock,
+                            start_with_wrench=True,
+                            potion_inv=potion_inv)
+        if result == "menu":
+            return
+        if result not in ("level5", "level6"):
+            return
+        level = 5
+
+    # level 5 left
     # level_6 is wired in directly for now so it can be tested standalone
     if level <= 6:
         stop_music()

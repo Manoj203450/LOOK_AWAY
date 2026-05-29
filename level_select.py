@@ -44,11 +44,11 @@ def run_level_select(screen, clock):
         # Page 1 — levels 4-6
         [
             {
-                "name":         "LEVEL 4 — COMING SOON",
-                "desc":         "This level is not yet available.",
-                "unlocked":     False,
+                "name":         "LEVEL 4 — THE WATCHERS",
+                "desc":         "The voice was wrong. Look away.",
+                "unlocked":     True,
                 "level":        4,
-                "gives_wrench": False,
+                "gives_wrench": True,
             },
             {
                 "name":         "LEVEL 5 — COMING SOON",
