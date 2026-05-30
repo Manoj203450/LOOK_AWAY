@@ -37,6 +37,26 @@ class Lever:
         self._col_fixed   = (60, 180,  80)
         self._col_border  = (160, 130,  60)
 
+        try:
+            sheet     = pygame.image.load(
+                "assets/sprites/lever.png").convert_alpha()
+            # Each frame is half the total width
+            frame_w   = sheet.get_width() // 2
+            frame_h   = sheet.get_height()
+
+            # Left frame
+            self.img_off = pygame.transform.scale(
+                sheet.subsurface((0, 0, frame_w, frame_h)),
+                (width, height))
+
+            # Right frame
+            self.img_on = pygame.transform.scale(
+                sheet.subsurface((frame_w, 0, frame_w, frame_h)),
+                (width, height))
+        except:
+            self.img_off = None
+            self.img_on  = None
+
     # ────────────────────────────────────────────────────────────────
 
     def is_near(self, pcx, pcy):
@@ -69,21 +89,32 @@ class Lever:
 
     def draw(self, screen, font_small):
         # Body
-        colour = self._col_fixed if self.fixed else self._col_unfixed
-        pygame.draw.rect(screen, colour, self.rect)
-        pygame.draw.rect(screen, self._col_border, self.rect, 2)
+        if self.fixed:
+            if self.img_on:
+                screen.blit(self.img_on, (self.rect.x, self.rect.y))
+            else:
+                pygame.draw.rect(screen, self._col_fixed, self.rect)
+                pygame.draw.rect(screen,self._col_border, self.rect, 2)
+
+        else:
+            if self.img_off:
+                screen.blit(self.img_off, (self.rect.x, self.rect.y))
+            else:
+                pygame.draw.rect(screen, self._col_unfixed, self.rect)
+                pygame.draw.rect(screen, self._col_border, self.rect, 2)
 
         # Label
-        try:
-            text = font_small.render(
-                "LEVER" if not self.fixed else "ACTIVE",
-                True,
-                (220, 220, 180) if not self.fixed else (140, 255, 140)
-            )
-            screen.blit(text, (self.rect.centerx - text.get_width() // 2,
-                                self.rect.centery - text.get_height() // 2))
-        except Exception:
-            pass
+        # try:
+        #     text = font_small.render(
+        #         "LEVER" if not self.fixed else "ACTIVE",
+        #         True,
+        #         (220, 220, 180) if not self.fixed else (140, 255, 140)
+        #     )
+        #     screen.blit(text, (self.rect.centerx - text.get_width() // 2,
+        #                         self.rect.centery - text.get_height() // 2))
+        # except Exception
+        # :
+        #     pass
 
         # Hold-progress bar (only shown while player is actively holding)
         if not self.fixed and self._hold_timer > 0:

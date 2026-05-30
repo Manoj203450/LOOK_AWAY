@@ -39,7 +39,7 @@ class Crewmate:
         # ── sprite ──────────────────────────────────────────────────
         # TODO: swap path to crewmate asset once it exists
         self.sprite = AnimatedSprite(
-            "assets/sprites/player.png",
+            "assets/sprites/crewmate_bw.png",
             num_frames=4,
             frame_duration=8,
             scale=1

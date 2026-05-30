@@ -20,8 +20,17 @@ clock = pygame.time.Clock()
 
 
 def play_level(level_func, screen, clock, **kwargs):
+    first_run = True
     while True:
-        result = level_func(screen, clock, **kwargs)
+        if first_run:
+            kwargs.pop("restart_music", None)
+            result = level_func(screen, clock, **kwargs)
+        else:
+            kwargs.pop("restart_music", None)
+            result = level_func(screen, clock,
+                                restart_music=True, **kwargs)
+        first_run = False
+
         if result == "menu":
             stop_music()
             return "menu"
@@ -33,7 +42,6 @@ def run_game_from(level, gives_wrench, screen, clock):
     potion_inv = PotionInventory()
 
     if level <= 1:
-        # Start music only when beginning from level 1
         play_music("assets/audio/audio_1.ogg",
                    loop=True, volume=0.3)
         result = play_level(run_level1, screen, clock,
@@ -49,10 +57,12 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 2:
         if not music_already_playing:
+            # Coming from level select — start music fresh
             play_music("assets/audio/audio_1.ogg",
                        loop=True, volume=0.3)
         result = play_level(run_level2, screen, clock,
-                            potion_inv=potion_inv)
+                            potion_inv=potion_inv,
+                            restart_music=False)  # ← always False here
         if result == "menu":
             return
         if result != "level3":

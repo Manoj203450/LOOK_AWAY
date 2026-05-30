@@ -634,7 +634,6 @@ def run_level3(screen, clock, start_with_wrench=False,
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
 
-
         # Prompts
         if near_fuse:
             prompt = font.render(
@@ -658,6 +657,13 @@ def run_level3(screen, clock, start_with_wrench=False,
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
+
+        # Fuse box counter - top right
+        fixed_count = sum(1 for fb in all_fuses if fb.fixed)
+        total_count = len(all_fuses)
+        cnt = font.render(f"POWER:  {fixed_count} / {total_count}",
+                          True, (160, 160, 200))
+        screen.blit(cnt, (WIDTH - cnt.get_width() - 20, 20))
 
         pygame.display.flip()
         clock.tick(60)

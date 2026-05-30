@@ -330,7 +330,6 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
 
-
         # Prompt after flashlight for visibility in the dark
         if near_fuse:
             prompt = font.render(
@@ -345,6 +344,13 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, False)
         potion_inv.draw(screen, font_small)
+
+        # Fuse box counter - top right
+        fixed_count = sum(1 for fb in fuse_boxes if fb.fixed)
+        total_count = len(fuse_boxes)
+        cnt = font.render(f"POWER:  {fixed_count} / {total_count}",
+                          True, (160, 160, 200))
+        screen.blit(cnt, (WIDTH - cnt.get_width() - 20, 20))
 
         pygame.display.flip()
         clock.tick(60)

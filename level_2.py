@@ -85,10 +85,14 @@ def run_death_screen(screen, clock):
         clock.tick(60)
 
 
-def run_level2(screen, clock, potion_inv=None, **kwargs):
+def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     # Use passed potion inventory or create new one
     if potion_inv is None:
         potion_inv = PotionInventory()
+
+    if restart_music:
+        play_music("assets/audio/audio_1.ogg",
+               loop=True, volume=0.3)
 
     WIDTH, HEIGHT = screen.get_size()
 
@@ -518,6 +522,7 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
 
         # DEATH CHECK
         if health <= 0:
+            stop_music()
             run_death_screen(screen, clock)
             return
 
@@ -724,6 +729,13 @@ def run_level2(screen, clock, potion_inv=None, **kwargs):
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
+
+        # Fuse box counter
+        fixed = sum(1 for fb in fuse_boxes if fb.fixed)
+        total = len(fuse_boxes)
+        cnt = font.render(f"POWER:  {fixed} / {total}",
+                          True, (160, 160, 200))
+        screen.blit(cnt, (WIDTH - cnt.get_width() - 20, 20))
 
         # Key HUD bottom right
         if has_key:

@@ -500,16 +500,17 @@ def run_level4(screen, clock, start_with_wrench=False,
             game_surf.blit(warn, (pcx - warn.get_width()//2, pcy - 70))
 
         # node counter
-        fixed = sum(1 for nd in all_nodes if nd.fixed)
-        cnt = font.render(f"POWER:  {fixed} / {len(all_nodes)}",
-                          True, (160, 160, 200))
-        game_surf.blit(cnt, (ROOM1.x, ROOM1.y - 34))
-
         screen.fill((0, 0, 0))
         screen.blit(game_surf, (0, 0))
 
         draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
+
+        fixed = sum(1 for nd in all_nodes if nd.fixed)
+        fixed = sum(1 for nd in all_nodes if nd.fixed)
+        cnt = font.render(f"POWER:  {fixed} / {len(all_nodes)}",
+                          True, (160, 160, 200))
+        screen.blit(cnt, (WIDTH - cnt.get_width() - 20, 20))
 
         pygame.display.flip()
         clock.tick(60)

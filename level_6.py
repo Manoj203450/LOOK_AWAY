@@ -216,6 +216,31 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
     CANNON_NEAR_RAD = 70
     cannon_ready    = False   # set True once all levers are fixed
 
+    try:
+        cannon_sheet = pygame.image.load(
+            "assets/sprites/cannon.png").convert_alpha()
+
+        frame_w = cannon_sheet.get_width() // 2
+        frame_h = cannon_sheet.get_height()
+
+        target_h = 80
+        target_w = int(frame_w * (target_h / frame_h))
+
+        cannon_img_off = pygame.transform.scale(
+            cannon_sheet.subsurface((0, 0, frame_w, frame_h)),
+            (target_w, target_h))
+
+        cannon_img_on = pygame.transform.scale(
+            cannon_sheet.subsurface((frame_w, 0, frame_w, frame_h)),
+            (target_w, target_h))
+
+        cannon_rect = pygame.Rect(
+            ROOM_CX - target_w // 2, ROOM_TOP + 10,
+            target_w, target_h)
+    except:
+        cannon_img_off = None
+        cannon_img_on = None
+
     # ── CREWMATE ─────────────────────────────────────────────────────
     crewmate = Crewmate(ROOM_CX - 24, ROOM_TOP + 80)
 
@@ -413,14 +438,25 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         pygame.draw.rect(game_surf, (70, 75, 95),
                          (ROOM_LEFT, ROOM_TOP, ROOM_W, ROOM_H), 4)
 
-        # Cannon placeholder
-        cannon_col = (80, 180, 80) if cannon_ready else (80, 80, 80)
-        pygame.draw.rect(game_surf, cannon_col, cannon_rect)
-        pygame.draw.rect(game_surf, (120, 120, 120), cannon_rect, 2)
-        c_label = font_small.render("CANNON", True, (200, 200, 200))
-        game_surf.blit(c_label, (
-            cannon_rect.centerx - c_label.get_width() // 2,
-            cannon_rect.centery - c_label.get_height() // 2))
+
+        # Cannon
+        cannon_img = cannon_img_on if cannon_ready else cannon_img_off
+        if cannon_img:
+            game_surf.blit(cannon_img, (cannon_rect.x, cannon_rect.y))
+            # Glow when ready
+            # if cannon_ready:
+            #     glow = pygame.Surface((110, 60), pygame.SRCALPHA)
+            #     pygame.draw.rect(glow, (0, 150, 255, 40), glow.get_rect())
+            #     game_surf.blit(glow,
+            #                    (cannon_rect.x - 5, cannon_rect.y - 5))
+        else:
+            cannon_col = (80, 180, 80) if cannon_ready else (80, 80, 80)
+            pygame.draw.rect(game_surf, cannon_col, cannon_rect)
+            pygame.draw.rect(game_surf, (120, 120, 120), cannon_rect, 2)
+            c_label = font_small.render("CANNON", True, (200, 200, 200))
+            game_surf.blit(c_label, (
+                cannon_rect.centerx - c_label.get_width() // 2,
+                cannon_rect.centery - c_label.get_height() // 2))
 
         # Pillars
         for p in all_pillars:
