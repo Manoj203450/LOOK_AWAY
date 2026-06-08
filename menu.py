@@ -15,7 +15,7 @@ def run_menu(screen, clock):
         font_menu    = pygame.font.SysFont("courier", 32)
         font_tagline = pygame.font.SysFont("courier", 18)
 
-    options  = ["START NEW GAME", "LOAD GAME", "CREDITS", "EXIT"]
+    options  = ["START NEW GAME", "SELECT LEVEL", "SETTINGS", "CREDITS", "EXIT"]
     selected = 0
 
     WHITE   = (220, 220, 220)
@@ -47,7 +47,7 @@ def run_menu(screen, clock):
         screen.blit(title1, (80, 120))
         screen.blit(title2, (80, 210))
 
-        menu_start_y = 420
+        menu_start_y = 370
         for i, option in enumerate(options):
             if i == selected:
                 arrow = font_menu.render(">", True, RED)

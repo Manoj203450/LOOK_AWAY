@@ -11,11 +11,13 @@ from level_6 import run_level6
 from level_select import run_level_select
 from credits import run_credits
 from systems.audio import play_music, stop_music, play_sfx
+from settings_screen import run_settings
+from systems.settings_manager import settings
 
 pygame.init()
 pygame.mixer.init()
 WIDTH, HEIGHT = 1280, 720
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
 pygame.display.set_caption("Look Away")
 clock = pygame.time.Clock()
 
@@ -123,7 +125,7 @@ while True:
         run_game_from(1, False, screen, clock)
         stop_music()
 
-    elif choice == "LOAD GAME":
+    elif choice == "SELECT LEVEL":
         selection = run_level_select(screen, clock)
         if selection is not None:
             stop_music()
@@ -133,6 +135,10 @@ while True:
                 screen, clock
             )
             stop_music()
+
+    elif choice == "SETTINGS":
+        run_settings(screen, clock)
+        screen = pygame.display.get_surface()
 
     elif choice == "CREDITS":
         run_credits(screen, clock)

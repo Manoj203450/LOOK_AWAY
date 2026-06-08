@@ -1,5 +1,11 @@
 import pygame
 
+_fps_value = 0.0
+
+def set_fps(fps):
+    global _fps_value
+    _fps_value = fps
+
 def draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench):
     W, H = screen.get_size()
 
@@ -22,3 +28,15 @@ def draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench):
     else:
         wrench_text = font.render("[ WRENCH : THROWN ]", True, (80, 80, 80))
     screen.blit(wrench_text, (20, H - 40))
+    
+    try:
+        from systems.settings_manager import settings
+        if settings.get("show_fps", False) and _fps_value > 0:
+            try:
+                fps_font = pygame.font.Font("assets/fonts/menu_font.ttf", 14)
+            except Exception:
+                fps_font = pygame.font.SysFont("courier", 14)
+            fps_surf = fps_font.render(f"{_fps_value:.0f} FPS", True, (160, 160, 160))
+            screen.blit(fps_surf, (W - fps_surf.get_width() - 12, 8))
+    except Exception:
+        pass

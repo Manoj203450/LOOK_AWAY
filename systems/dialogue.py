@@ -46,7 +46,14 @@ def run_dialogue(screen, clock, lines, black_bg=False):
                         done      = True
 
             if not done:
-                if len(displayed) < len(text):
+                try:
+                    from systems.settings_manager import settings
+                    _fast = settings.get("dialogue_speed", "NORMAL") == "FAST"
+                except Exception:
+                    _fast = False
+                if _fast:
+                    displayed = text
+                elif len(displayed) < len(text):
                     displayed += text[len(displayed)]
 
             draw_box()

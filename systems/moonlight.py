@@ -10,7 +10,12 @@ def draw_moonlight(screen, moon_beam, moon_color):
 def apply_glitch(screen, intensity, WIDTH, HEIGHT):
     t = intensity / 100
 
-    if intensity > 20:
+    try:
+        from systems.settings_manager import settings
+        _shake_on = settings.get("screen_shake", True)
+    except Exception:
+        _shake_on = True
+    if intensity > 20 and _shake_on:
         shake_x = random.randint(-int(5 * t), int(5 * t))
         shake_y = random.randint(-int(5 * t), int(5 * t))
         shot = screen.copy()
