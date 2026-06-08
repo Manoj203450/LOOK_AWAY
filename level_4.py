@@ -475,9 +475,12 @@ def run_level4(screen, clock, start_with_wrench=False,
             pygame.draw.line(game_surf, (230, 240, 255),
                              (0, int(tide_top)), (WIDTH, int(tide_top)), 2)
             
-        # flashlight
+        # flashlight — dims proportionally to unfixed nodes
+        _fixed   = sum(1 for n in all_nodes if n.fixed)
+        _total   = len(all_nodes)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # player
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))

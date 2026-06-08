@@ -688,9 +688,12 @@ def run_level3(screen, clock, start_with_wrench=False,
 
             game_surf.blit(rotated, rect)
 
-        # Flashlight
+        # Flashlight — dims proportionally to unfixed fuses
+        _fixed   = sum(1 for f in all_fuses if f.fixed)
+        _total   = len(all_fuses)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # Player sprite
         player_sprites.draw(

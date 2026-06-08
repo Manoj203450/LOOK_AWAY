@@ -107,10 +107,10 @@ def run_game_from(level, gives_wrench, screen, clock):
             return
         level = 6
 
-    # level_6 is wired in directly for now so it can be tested standalone
     if level <= 6:
         stop_music()
         result = play_level(run_level6, screen, clock,
+                            start_with_wrench=True,
                             potion_inv=potion_inv)
         if result == "menu":
             return
