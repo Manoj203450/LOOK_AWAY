@@ -16,6 +16,8 @@ from entities.enemy import Enemy
 from entities.moon import Moon
 from sprite_loader import AnimatedSprite
 from systems.audio import play_music, stop_music, play_sfx
+from systems.settings_manager import settings
+
 
 
 def is_point_in_polygon(point, polygon):
@@ -225,6 +227,25 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
     game_surf = pygame.Surface((WIDTH, HEIGHT))
 
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
+
+    _box_sfx = None
+    try:
+        _box_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_box_push.ogg")
+    except Exception:
+        pass
+
+    _flood_sfx = None
+    try:
+        _flood_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_flood_rise.ogg")
+        _flood_sfx.set_volume(0.4 * settings.get("sfx_volume", 1.0))
+    except Exception:
+        pass
+
     running = True
     while running:
 
@@ -263,8 +284,10 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                     if pause_result == "continue":
                         pass
                     elif pause_result == "restart":
+                        if _flood_sfx: _flood_sfx.stop()
                         return None
                     elif pause_result == "menu":
+                        if _flood_sfx: _flood_sfx.stop()
                         return "menu"
 
                 # Fuse box interaction
@@ -299,10 +322,12 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                         result = run_fuse_puzzle(screen, clock)
                         if result == "solved":
                             fuse_boxes[active_fuse].fixed = True
+                            play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
 
                 # Chest interaction
                 elif event.key == pygame.K_e and near_chest is not None:
                     item = near_chest.open()
+                    play_sfx("assets/audio/sfx/chest_open.ogg", volume=0.6)
                     if item == "wrench":
                         has_wrench = True
                         if not wrench_tutorial_shown:
@@ -342,6 +367,8 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                 # Potion
                 if event.key == pygame.K_q:
                     health = potion_inv.use(health, max_health)
+                    play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
+
 
             # Throw wrench
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -351,6 +378,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                     dist = math.hypot(dx_w, dy_w)
                     if dist > 0:
                         has_wrench = False
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.6)
                         wrenches.append({
                             "pos":  pygame.Vector2(pcx, pcy),
                             "vel":  pygame.Vector2(
@@ -371,6 +399,13 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
         moving = (dx != 0 or dy != 0)
         player_sprites.update(moving)
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -391,11 +426,14 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                             new_x, new_y, PLAYER_SIZE, player_pos)
 
         # Movable box push
+        _box_moved = False
         moving_rect = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
         for mb in mov_boxes:
             old_bx = mb.rect.x
             old_by = mb.rect.y
             mb.push(dx, dy, moving_rect, room_bounds)
+            if mb.rect.x != old_bx or mb.rect.y != old_by:
+                _box_moved = True
             for sb in stat_boxes:
                 if mb.rect.colliderect(sb.rect):
                     mb.rect.x = old_bx
@@ -405,6 +443,14 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             if mb.rect.colliderect(hole_rect):
                 mb.rect.x = old_bx
                 mb.rect.y = old_by
+
+        if _box_moved:
+            if _box_sfx and _box_sfx.get_num_channels() == 0:
+                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.play()
+        else:
+            if _box_sfx:
+                _box_sfx.stop()
 
         # Hard block player from movable boxes
         for mb in mov_boxes:
@@ -445,10 +491,12 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         # Moon flood damage
         if moon.is_flooding():
             taking_damage = True
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health -= moon.get_flood_damage()
 
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 1)
@@ -461,6 +509,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                          hole_rect=hole_rect)
             if enemy.get_rect().colliderect(player_rect_cur):
                 if enemy.state == "chase":
+                    play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
                     health -= 0.5
 
         # WRENCH UPDATE
@@ -484,6 +533,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             wr = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
             if enemy_active and wr.colliderect(enemy.get_rect()):
                 enemy.stun()
+                play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.7)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
 
@@ -498,6 +548,9 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         if all(fb.fixed for fb in fuse_boxes) and not moon_triggered:
             moon_triggered = True
             moon.trigger()
+            if _flood_sfx:
+                _flood_sfx.play(-1)
+            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.6)
             door_open = True
 
             run_dialogue(screen, clock, [
@@ -518,11 +571,13 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             if not has_wrench:
                 pass  # show warning in draw section
             else:
+                if _flood_sfx: _flood_sfx.stop()
                 return "level3"
 
         # DEATH CHECK
         if health <= 0:
             stop_music()
+            if _flood_sfx: _flood_sfx.stop()
             run_death_screen(screen, clock)
             return
 

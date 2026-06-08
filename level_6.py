@@ -8,9 +8,10 @@ from systems.boxes import StationaryBox
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from systems.potion import PotionInventory
-from systems.audio import stop_music
+from systems.audio import play_music, stop_music, play_sfx
 from entities.crewmate import Crewmate
 from sprite_loader import AnimatedSprite
+from systems.settings_manager import settings
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -157,7 +158,11 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
 
     WIDTH, HEIGHT = screen.get_size()
 
-    stop_music()   # silence — let the tension breathe
+    stop_music()
+    try:
+        play_music("assets/audio/lvl6_uhh.ogg", loop=True, volume=0.4)
+    except Exception:
+        pass  # silence fallback
 
     try:
         font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)

@@ -10,9 +10,11 @@ from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.potion import PotionInventory
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
-from systems.audio import play_music, stop_music
+from systems.audio import play_music, stop_music, play_sfx
 from entities.shade import Shade
 from sprite_loader import AnimatedSprite
+from systems.settings_manager import settings
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

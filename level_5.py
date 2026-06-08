@@ -11,12 +11,14 @@ from systems.fuse_puzzle    import FuseBox, run_fuse_puzzle
 from systems.potion         import PotionInventory
 from systems.dialogue       import run_dialogue
 from systems.pause          import run_pause
-from systems.audio          import play_music, stop_music
 from entities.shade         import Shade
 from entities.weeping_angel import WeepingAngel
 from entities.enemy         import Enemy
 from entities.crewmate      import Crewmate
 from sprite_loader          import AnimatedSprite
+from systems.audio import play_music, stop_music, play_sfx
+from systems.settings_manager import settings
+
 
 
 # Helpers
@@ -86,12 +88,9 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Lvl music
     stop_music()
     try:
-        play_music("assets/audio/lvl5.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/chinese.ogg", loop=True, volume=0.4)
     except Exception:
-        try:
-            play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
-        except Exception:
-            pass
+        pass
 
     # Fonts
     try:

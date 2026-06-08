@@ -13,6 +13,8 @@ from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from entities.weeping_angel import WeepingAngel
 from sprite_loader import AnimatedSprite
+from systems.audio import play_music, stop_music, play_sfx
+from systems.settings_manager import settings
 
 
 def is_point_in_polygon(point, polygon):
@@ -217,6 +219,26 @@ def run_level3(screen, clock, start_with_wrench=False,
     game_surf = pygame.Surface((WIDTH, HEIGHT))
     game_surf.fill((5, 5, 15))
 
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
+
+    _box_sfx = None
+    try:
+        _box_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_box_push.ogg")
+    except Exception:
+        pass
+
+    _angel_sfx = None
+    try:
+        _angel_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_angel_move.ogg")
+    except Exception:
+        pass
+
+    _prev_angel_b_frozen = True
+    _prev_angel_d_frozen = True
     running = True
     while running:
 
@@ -296,17 +318,27 @@ def run_level3(screen, clock, start_with_wrench=False,
                     if pause_result == "continue":
                         pass
                     elif pause_result == "restart":
+                        if _angel_sfx: _angel_sfx.stop()
+                        if _foot_sfx: _foot_sfx.stop()
                         return None
                     elif pause_result == "menu":
+                        if _angel_sfx: _angel_sfx.stop()
+                        if _foot_sfx: _foot_sfx.stop()
                         return "menu"
 
                 if event.key == pygame.K_e and active_fuse is not None:
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
                         all_fuses[active_fuse].fixed = True
+                        play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
+                        if all(fb.fixed for fb in all_fuses):
+                            door_open = True
+                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.6)
 
                 if event.key == pygame.K_q:
                     health = potion_inv.use(health, max_health)
+                    play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
+
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and has_wrench:
@@ -315,6 +347,7 @@ def run_level3(screen, clock, start_with_wrench=False,
                     dist = math.hypot(dx_w, dy_w)
                     if dist > 0:
                         has_wrench = False
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.6)
                         wrenches.append({
                             "pos":  pygame.Vector2(pcx, pcy),
                             "vel":  pygame.Vector2(
@@ -335,6 +368,13 @@ def run_level3(screen, clock, start_with_wrench=False,
 
         moving = (dx != 0 or dy != 0)
         player_sprites.update(moving)
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -369,26 +409,38 @@ def run_level3(screen, clock, start_with_wrench=False,
                             new_x, new_y, PLAYER_SIZE, player_pos)
 
         # Movable box push
-        moving_rect = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
-        for mb in mov_boxes:
-            old_bx = mb.rect.x
-            old_by = mb.rect.y
-            mb.push(dx, dy, moving_rect,
-                    room_bounds_a,  # kept for fallback
-                    valid_rooms=all_rooms)  # ← pass all rooms
-            for sb in stat_boxes:
-                if mb.rect.colliderect(sb.rect):
-                    mb.rect.x = old_bx
-                    mb.rect.y = old_by
-                    new_x = player_pos.x
-                    new_y = player_pos.y
+            # Movable box push
+            _box_moved = False  # reset every frame
+            moving_rect = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
+            for mb in mov_boxes:
+                old_bx = mb.rect.x
+                old_by = mb.rect.y
+                mb.push(dx, dy, moving_rect,
+                        room_bounds_a,
+                        valid_rooms=all_rooms)
+                if mb.rect.x != old_bx or mb.rect.y != old_by:
+                    _box_moved = True  # box actually moved
+                for sb in stat_boxes:
+                    if mb.rect.colliderect(sb.rect):
+                        mb.rect.x = old_bx
+                        mb.rect.y = old_by
+                        new_x = player_pos.x
+                        new_y = player_pos.y
 
-            if mb.rect.x == old_bx and mb.rect.y == old_by:
-                player_next = pygame.Rect(
-                    new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
-                if player_next.colliderect(mb.rect):
-                    new_x = player_pos.x
-                    new_y = player_pos.y
+                if mb.rect.x == old_bx and mb.rect.y == old_by:
+                    player_next = pygame.Rect(
+                        new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
+                    if player_next.colliderect(mb.rect):
+                        new_x = player_pos.x
+                        new_y = player_pos.y
+
+            if _box_moved:  # play/stop after loop
+                if _box_sfx and _box_sfx.get_num_channels() == 0:
+                    _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                    _box_sfx.play()
+            else:
+                if _box_sfx:
+                    _box_sfx.stop()
 
         # Hard block
         for mb in mov_boxes:
@@ -420,6 +472,15 @@ def run_level3(screen, clock, start_with_wrench=False,
         angel_d.update(player_pos, PLAYER_SIZE,
                        angle, CONE_ANGLE, FLASHLIGHT_RADIUS,
                        valid_rooms=all_rooms)
+
+        any_angel_moving = not angel_b.frozen or not angel_d.frozen
+        if any_angel_moving:
+            if _angel_sfx and _angel_sfx.get_num_channels() == 0:
+                _angel_sfx.set_volume(0.6 * settings.get("sfx_volume", 1.0))
+                _angel_sfx.play(-1)
+        else:
+            if _angel_sfx:
+                _angel_sfx.stop()
 
         for angel in [angel_b, angel_d]:
             if angel.get_rect().colliderect(player_rect_cur):
@@ -483,6 +544,7 @@ def run_level3(screen, clock, start_with_wrench=False,
 
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 4)
@@ -523,12 +585,18 @@ def run_level3(screen, clock, start_with_wrench=False,
                     ("The canons are your only hope.",       RED),
                     ("Lets destroy this big rock in space.", WHITE),
                 ], black_bg=True)
+                if _angel_sfx: _angel_sfx.stop()
+                if _foot_sfx: _foot_sfx.stop()
                 return "level4"
             else:
+                if _angel_sfx: _angel_sfx.stop()
+                if _foot_sfx: _foot_sfx.stop()
                 return "level4"
 
         # DEATH CHECK
         if health <= 0:
+            if _angel_sfx: _angel_sfx.stop()
+            if _foot_sfx: _foot_sfx.stop()
             run_death_screen(screen, clock)
             return
 
