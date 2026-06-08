@@ -86,10 +86,10 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Lvl music
     stop_music()
     try:
-        play_music("assets/audio/chinese.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/lvl5.ogg", loop=True, volume=0.4)
     except Exception:
         try:
-            play_music("assets/audio/lvl5.ogg", loop=True, volume=0.4)
+            play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
         except Exception:
             pass
 
