@@ -4,7 +4,7 @@ import math
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import draw_moonlight, apply_glitch
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.pause import run_pause
@@ -344,6 +344,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         screen.blit(game_surf, (0, 0))
 
         # HUD on screen directly
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, False)
         potion_inv.draw(screen, font_small)

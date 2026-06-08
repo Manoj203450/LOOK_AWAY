@@ -45,7 +45,7 @@ def run_game_from(level, gives_wrench, screen, clock):
     potion_inv = PotionInventory()
 
     if level <= 1:
-        play_music("assets/audio/audio_1.ogg",
+        play_music("assets/audio/lvl1.ogg",
                    loop=True, volume=0.3)
         result = play_level(run_level1, screen, clock,
                             potion_inv=potion_inv)

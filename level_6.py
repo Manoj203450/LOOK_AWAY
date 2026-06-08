@@ -4,7 +4,7 @@ import math
 import random
 
 from systems.lever import Lever
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
@@ -513,6 +513,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         screen.fill((0, 0, 0))
         screen.blit(game_surf, (0, 0))
 
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health, 0, has_wrench)
         potion_inv.draw(screen, font_small)
 

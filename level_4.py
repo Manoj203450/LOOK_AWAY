@@ -4,7 +4,7 @@ import math
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import apply_glitch
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.potion import PotionInventory
@@ -506,6 +506,7 @@ def run_level4(screen, clock, start_with_wrench=False,
         screen.fill((0, 0, 0))
         screen.blit(game_surf, (0, 0))
 
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
 

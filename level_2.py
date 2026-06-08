@@ -5,7 +5,7 @@ import random
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import draw_moonlight, apply_glitch
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.chest import Chest
@@ -729,6 +729,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         screen.blit(game_surf, (shake_x, shake_y))
 
         # HUD on screen directly (no shake)
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
