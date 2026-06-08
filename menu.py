@@ -1,10 +1,23 @@
 import pygame
 import sys
+import cv2
+import numpy
 
 
 def run_menu(screen, clock):
-    bg = pygame.image.load("assets/images/menu_bg.png").convert()
-    bg = pygame.transform.scale(bg, screen.get_size())
+    WIDTH, HEIGHT = screen.get_size()
+
+    cap = cv2.VideoCapture("assets/menu_video.mp4")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    frame_delay = int(1000 / fps)
+    last_frame_time = 0
+    video_surface = None
+
+    try:
+        pygame.mixer.music.load("assets/menu_audio.mp3")
+        pygame.mixer.music.play(-1)
+    except Exception:
+        pass
 
     try:
         font_title   = pygame.font.Font("assets/fonts/menu_font.ttf", 90)
@@ -18,14 +31,17 @@ def run_menu(screen, clock):
     options  = ["START NEW GAME", "SELECT LEVEL", "SETTINGS", "CREDITS", "EXIT"]
     selected = 0
 
-    WHITE   = (220, 220, 220)
-    RED     = (200, 40,  40)
-    DIM     = (130, 130, 130)
+    WHITE = (220, 220, 220)
+    RED = (200, 40,  40)
+    DIM = (130, 130, 130)
     TAGLINE = (120, 40,  40)
 
     while True:
+        now = pygame.time.get_ticks()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                cap.release()
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
@@ -34,19 +50,38 @@ def run_menu(screen, clock):
                 if event.key in (pygame.K_DOWN, pygame.K_s):
                     selected = (selected + 1) % len(options)
                 if event.key == pygame.K_RETURN:
+                    cap.release()
                     return options[selected]
 
-        screen.blit(bg, (0, 0))
+        if now - last_frame_time >= frame_delay:
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.resize(frame, (WIDTH, HEIGHT))
+                video_surface = pygame.surfarray.make_surface(
+                        numpy.rot90(numpy.fliplr(frame)))
+            last_frame_time = now
 
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 40))
-        screen.blit(overlay, (0, 0))
+        if video_surface:
+            screen.blit(video_surface, (0, 0))
+        else:
+            screen.fill((0, 0, 0))
 
+        panel_w = 420
+        panel = pygame.Surface((panel_w, HEIGHT), pygame.SRCALPHA)
+        panel.fill((0, 0, 0, 180))
+        screen.blit(panel, (0, 0))
+
+        # TITLE
         title1 = font_title.render("LOOK", True, WHITE)
         title2 = font_title.render("AWAY", True, WHITE)
         screen.blit(title1, (80, 120))
         screen.blit(title2, (80, 210))
 
+        # MENU OPTIONS
         menu_start_y = 370
         for i, option in enumerate(options):
             if i == selected:
@@ -58,9 +93,10 @@ def run_menu(screen, clock):
                 text = font_menu.render(option, True, DIM)
                 screen.blit(text, (115, menu_start_y + i * 55))
 
+        # TAGLINE
         tagline = font_tagline.render(
             "DON'T LOOK TOO LONG.", True, TAGLINE)
-        screen.blit(tagline, (80, screen.get_height() - 50))
+        screen.blit(tagline, (80, HEIGHT - 50))
 
         pygame.display.flip()
         clock.tick(60)

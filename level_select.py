@@ -1,9 +1,17 @@
 import pygame
 import sys
+import cv2
+import numpy
 
 
 def run_level_select(screen, clock):
     WIDTH, HEIGHT = screen.get_size()
+
+    cap = cv2.VideoCapture("assets/menu_video.mp4")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    frame_delay = int(1000 / fps)
+    last_frame_time = 0
+    video_surface = None
 
     try:
         font_title = pygame.font.Font("assets/fonts/menu_font.ttf", 48)
@@ -14,10 +22,7 @@ def run_level_select(screen, clock):
         font       = pygame.font.SysFont("courier", 28)
         font_small = pygame.font.SysFont("courier", 16)
 
-    # ── ALL LEVELS ────────────────────────────────────────────────────
-    # Two pages of three, navigated with LEFT / RIGHT
     pages = [
-        # Page 0 — levels 1-3
         [
             {
                 "name":         "LEVEL 1 — AWAKENING",
@@ -41,7 +46,6 @@ def run_level_select(screen, clock):
                 "gives_wrench": True,
             },
         ],
-        # Page 1 — levels 4-6
         [
             {
                 "name":         "LEVEL 4 — THE WATCHERS",
@@ -67,8 +71,8 @@ def run_level_select(screen, clock):
         ],
     ]
 
-    page     = 0   # 0 or 1
-    selected = 0   # 0-2 within the current page
+    page     = 0
+    selected = 0
 
     WHITE  = (220, 220, 220)
     DIM    = (100, 100, 100)
@@ -76,30 +80,26 @@ def run_level_select(screen, clock):
     DARK   = ( 10,  12,  20)
     BORDER = ( 50,  60,  80)
 
-    try:
-        bg = pygame.image.load("assets/images/menu_bg.png").convert()
-        bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
-    except:
-        bg = None
-
     running = True
     while running:
+        now = pygame.time.get_ticks()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                cap.release()
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    cap.release()
                     return None
 
-                # Up / down — move selection within page
                 if event.key in (pygame.K_UP, pygame.K_w):
                     selected = (selected - 1) % len(pages[page])
                 if event.key in (pygame.K_DOWN, pygame.K_s):
                     selected = (selected + 1) % len(pages[page])
 
-                # Left / right — switch page, keep row position
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     if page > 0:
                         page -= 1
@@ -107,26 +107,38 @@ def run_level_select(screen, clock):
                     if page < len(pages) - 1:
                         page += 1
 
-                # Confirm
                 if event.key == pygame.K_RETURN:
                     lvl = pages[page][selected]
                     if lvl["unlocked"]:
+                        cap.release()
                         return {
                             "level":        lvl["level"],
                             "gives_wrench": lvl["gives_wrench"],
                         }
 
-        # ── DRAW ──────────────────────────────────────────────────────
-        if bg:
-            screen.blit(bg, (0, 0))
+        if now - last_frame_time >= frame_delay:
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.resize(frame, (WIDTH, HEIGHT))
+                video_surface = pygame.surfarray.make_surface(
+                    numpy.rot90(numpy.fliplr(frame)))
+            last_frame_time = now
+
+        if video_surface:
+            screen.blit(video_surface, (0, 0))
         else:
             screen.fill(DARK)
 
+        # DARK OVERLAY
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
         screen.blit(overlay, (0, 0))
 
-        # Title
+        # TITLE
         title = font_title.render("SELECT LEVEL", True, WHITE)
         screen.blit(title, (80, 60))
 
@@ -135,7 +147,7 @@ def run_level_select(screen, clock):
             True, DIM)
         screen.blit(hint, (80, 120))
 
-        # Level cards
+        # LEVEL CARDS
         card_x = 80
         card_y = 180
         card_w = WIDTH - 160
@@ -177,10 +189,9 @@ def run_level_select(screen, clock):
                     lvl["name"] + "  [ LOCKED ]", True, (60, 60, 60))
                 screen.blit(locked, (card_x + 45, cy + 35))
 
-        # Page indicator  ◄ 1 / 2 ►
-        page_str   = f"< {page + 1} / {len(pages)} >"
-        page_text  = font_small.render(page_str, True,
-                                       (160, 160, 200))
+        # PAGE INDICATOR
+        page_str  = f"< {page + 1} / {len(pages)} >"
+        page_text = font_small.render(page_str, True, (160, 160, 200))
         screen.blit(page_text,
                     (WIDTH // 2 - page_text.get_width() // 2,
                      card_y + len(pages[page]) * (card_h + gap) + 10))
