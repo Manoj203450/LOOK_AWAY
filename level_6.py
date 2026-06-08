@@ -1,6 +1,7 @@
 import pygame
 import sys
 import math
+import random
 
 from systems.lever import Lever
 from systems.hud import draw_hud
@@ -11,6 +12,7 @@ from systems.potion import PotionInventory
 from systems.audio import stop_music
 from entities.crewmate import Crewmate
 from sprite_loader import AnimatedSprite
+from cinematic import run_cinematic_ending
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -320,7 +322,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                         and player_stun_timer == 0:
                     choice = run_cannon_choice(screen, clock)
                     if choice == "fire":
-                        run_bad_ending(screen, clock)
+                        run_cinematic_ending(screen, clock)
                     else:
                         run_neutral_ending(screen, clock)
                     return "menu"

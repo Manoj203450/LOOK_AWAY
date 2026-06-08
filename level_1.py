@@ -315,9 +315,12 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         # Moonlight beam
         draw_moonlight(game_surf, moon_beam, MOON_COLOR)
 
-        # Flashlight
+        # Flashlight — dims proportionally to unfixed fuse boxes
+        _fixed   = sum(1 for fb in fuse_boxes if fb.fixed)
+        _total   = len(fuse_boxes)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # Player sprite
         player_sprite.draw(
