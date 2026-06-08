@@ -16,6 +16,7 @@ from entities.enemy import Enemy
 from entities.moon import Moon
 from sprite_loader import AnimatedSprite
 from systems.audio import play_music, stop_music, play_sfx
+from systems.particles import ParticleSystem
 
 
 def is_point_in_polygon(point, polygon):
@@ -67,11 +68,11 @@ def run_death_screen(screen, clock):
     hint     = font_small.render("press any key to return",
                                  True, (60, 60, 60))
     screen.blit(title,
-                (WIDTH//2 - title.get_width()//2,    HEIGHT//2 - 80))
+                (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 80))
     screen.blit(subtitle,
                 (WIDTH//2 - subtitle.get_width()//2, HEIGHT//2 + 10))
     screen.blit(hint,
-                (WIDTH//2 - hint.get_width()//2,     HEIGHT//2 + 80))
+                (WIDTH//2 - hint.get_width()//2, HEIGHT//2 + 80))
     pygame.display.flip()
 
     waiting = True
@@ -89,6 +90,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     # Use passed potion inventory or create new one
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     if restart_music:
         play_music("assets/audio/audio_1.ogg",
@@ -108,32 +110,36 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     )
 
     try:
-        font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
+        font = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
         font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 14)
     except:
-        font       = pygame.font.SysFont("courier", 20)
+        font = pygame.font.SysFont("courier", 20)
         font_small = pygame.font.SysFont("courier", 14)
 
+    moon_particles = ParticleSystem()
+    moon_part_timer = 0
+    MOON_PART_INTERVAL = 6
+
     # ROOM
-    ROOM_LEFT   = 60
-    ROOM_TOP    = 60
-    ROOM_RIGHT  = 1220
+    ROOM_LEFT = 60
+    ROOM_TOP = 60
+    ROOM_RIGHT = 1220
     ROOM_BOTTOM = 660
     room_bounds = (ROOM_LEFT, ROOM_TOP, ROOM_RIGHT, ROOM_BOTTOM)
 
     # Space hole in the floor (center)
-    HOLE_W    = 300
-    HOLE_H    = 200
-    HOLE_X    = WIDTH  // 2 - HOLE_W // 2
-    HOLE_Y    = HEIGHT // 2 - HOLE_H // 2
+    HOLE_W = 300
+    HOLE_H = 200
+    HOLE_X = WIDTH  // 2 - HOLE_W // 2
+    HOLE_Y = HEIGHT // 2 - HOLE_H // 2
     hole_rect = pygame.Rect(HOLE_X, HOLE_Y, HOLE_W, HOLE_H)
 
     # PLAYER
-    player_pos   = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
-    PLAYER_SIZE  = 48
+    player_pos = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
+    PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health       = 100
-    max_health   = 100
+    health = 100
+    max_health = 100
 
     player_sprites = AnimatedSprite(
         "assets/sprites/player.png",
@@ -144,20 +150,20 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
     # FLASHLIGHT
     FLASHLIGHT_RADIUS = 500
-    CONE_ANGLE        = math.radians(45)
-    darkness          = pygame.Surface((WIDTH, HEIGHT))
-    glitch_intensity  = 0
+    CONE_ANGLE = math.radians(45)
+    darkness = pygame.Surface((WIDTH, HEIGHT))
+    glitch_intensity = 0
 
     # MOONLIGHT CIRCLES
     moon_circles = [
-        {"center": (300,  200), "radius": 70},
-        {"center": (650,  180), "radius": 60},
-        {"center": (950,  250), "radius": 75},
-        {"center": (200,  450), "radius": 65},
-        {"center": (500,  400), "radius": 55},
-        {"center": (800,  500), "radius": 70},
+        {"center": (300, 200), "radius": 70},
+        {"center": (650, 180), "radius": 60},
+        {"center": (950, 250), "radius": 75},
+        {"center": (200, 450), "radius": 65},
+        {"center": (500, 400), "radius": 55},
+        {"center": (800, 500), "radius": 70},
         {"center": (1050, 400), "radius": 60},
-        {"center": (700,  580), "radius": 65},
+        {"center": (700, 580), "radius": 65},
     ]
 
     # STATIONARY BOXES
@@ -179,26 +185,26 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     # FUSE BOXES
     # placed far from exit to force a run
     fuse_boxes = [
-        FuseBox(250,  130),
-        FuseBox(750,  130),
-        FuseBox(150,  400),   # ← opposite side of exit, final fuse
+        FuseBox(250, 130),
+        FuseBox(750, 130),
+        FuseBox(150, 400),   # ← opposite side of exit, final fuse
     ]
     fuse_boxes[2].requires_key = True
     fuse_boxes[2].requires_all = True
 
     # CHESTS
     chest_wrench = Chest(150,  550, "wrench")
-    chest_key    = Chest(1050, 150, "key")
+    chest_key = Chest(1050, 150, "key")
     chest_potion = Chest(450,  550, "potion")
-    all_chests   = [chest_wrench, chest_key, chest_potion]
+    all_chests = [chest_wrench, chest_key, chest_potion]
 
     # INVENTORY
-    has_wrench            = False
-    wrench_on_ground      = None
-    wrenches              = []
-    WRENCH_SPEED          = 10
+    has_wrench  = False
+    wrench_on_ground = None
+    wrenches = []
+    WRENCH_SPEED = 10
     wrench_tutorial_shown = False
-    has_key               = False
+    has_key = False
 
     # ENEMY
     enemy = Enemy(400, 200)
@@ -216,7 +222,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         ROOM_BOTTOM - ROOM_TOP)
 
     # MOON
-    moon           = Moon()
+    moon = Moon()
     moon_triggered = False
 
     # EXIT
@@ -229,23 +235,23 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     while running:
 
         # CENTER + ANGLE
-        pcx    = player_pos.x + PLAYER_SIZE // 2
-        pcy    = player_pos.y + PLAYER_SIZE // 2
+        pcx = player_pos.x + PLAYER_SIZE // 2
+        pcy = player_pos.y + PLAYER_SIZE // 2
         mx, my = pygame.mouse.get_pos()
-        angle  = math.atan2(my - pcy, mx - pcx)
+        angle = math.atan2(my - pcy, mx - pcx)
 
         player_rect_cur = pygame.Rect(
             player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
 
         # CHECK NEARBY INTERACTABLES
         active_fuse = None
-        near_fuse   = False
-        near_chest  = None
+        near_fuse = False
+        near_chest = None
 
         for i, fb in enumerate(fuse_boxes):
             if not fb.fixed and fb.is_near(pcx, pcy):
                 active_fuse = i
-                near_fuse   = True
+                near_fuse = True
 
         for ch in all_chests:
             if not ch.opened and ch.is_near(pcx, pcy):
@@ -269,7 +275,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
                 # Fuse box interaction
                 if event.key == pygame.K_e and active_fuse is not None:
-                    fb        = fuse_boxes[active_fuse]
+                    fb = fuse_boxes[active_fuse]
                     needs_key = getattr(fb, "requires_key", False)
                     needs_all = getattr(fb, "requires_all", False)
 
@@ -298,7 +304,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                             has_key = False
                         result = run_fuse_puzzle(screen, clock)
                         if result == "solved":
-                            fuse_boxes[active_fuse].fixed = True
+                            fuse_boxes[active_fuse].fix()
 
                 # Chest interaction
                 elif event.key == pygame.K_e and near_chest is not None:
@@ -330,18 +336,36 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                                  (100, 220, 100)),
                             ])
                     elif item == "key":
-                        has_key      = True
+                        has_key = True
                         enemy_active = True
                         run_dialogue(screen, clock, [
-                            ("You found a key.",   (220, 180, 40)),
-                            ("...",                (200, 200, 200)),
+                            ("You found a key.", (220, 180, 40)),
+                            ("...", (200, 200, 200)),
                             ("Something woke up.", (200, 80,  80)),
-                            ("RUN.",               (255, 50,  50)),
+                            ("RUN.", (255, 50,  50)),
                         ])
 
                 # Potion
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
             # Throw wrench
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -352,8 +376,8 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                     if dist > 0:
                         has_wrench = False
                         wrenches.append({
-                            "pos":  pygame.Vector2(pcx, pcy),
-                            "vel":  pygame.Vector2(
+                            "pos": pygame.Vector2(pcx, pcy),
+                            "vel": pygame.Vector2(
                                         dx_w/dist * WRENCH_SPEED,
                                         dy_w/dist * WRENCH_SPEED),
                             "life": 30,
@@ -364,9 +388,9 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         keys = pygame.key.get_pressed()
         dx = 0
         dy = 0
-        if keys[pygame.K_w] or keys[pygame.K_UP]:    dy -= PLAYER_SPEED
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += PLAYER_SPEED
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= PLAYER_SPEED
+        if keys[pygame.K_w] or keys[pygame.K_UP]: dy -= PLAYER_SPEED
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: dy += PLAYER_SPEED
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]: dx -= PLAYER_SPEED
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += PLAYER_SPEED
 
         moving = (dx != 0 or dy != 0)
@@ -470,7 +494,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             w["rotation"] += 20
 
             wrench_rect = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
-            in_bounds   = valid_room.contains(wrench_rect)
+            in_bounds = valid_room.contains(wrench_rect)
 
             if not in_bounds or w["life"] <= 0:
                 wrench_on_ground = pygame.Vector2(w["pos"])
@@ -483,7 +507,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
             wr = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
             if enemy_active and wr.colliderect(enemy.get_rect()):
-                enemy.stun()
+                enemy.stun(hit_x=w["pos"].x, hit_y=w["pos"].y)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
 
@@ -491,7 +515,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             gr = pygame.Rect(
                 wrench_on_ground.x, wrench_on_ground.y, 16, 16)
             if player_rect_cur.colliderect(gr):
-                has_wrench       = True
+                has_wrench = True
                 wrench_on_ground = None
 
         # MOON TRIGGER
@@ -501,9 +525,9 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             door_open = True
 
             run_dialogue(screen, clock, [
-                ("All power restored.",     (200, 200, 200)),
-                ("...",                     (200, 200, 200)),
-                ("Something is wrong.",     (200, 80,  80)),
+                ("All power restored.", (200, 200, 200)),
+                ("...", (200, 200, 200)),
+                ("Something is wrong.", (200, 80,  80)),
                 ("DON'T LOOK AT THE MOON.", (255, 50,  50)),
             ])
 
@@ -512,6 +536,32 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                        loop=True, volume=0.5)
 
         moon.update()
+
+        if moon_triggered:
+            moon_part_timer += 1
+            if moon_part_timer >= MOON_PART_INTERVAL:
+                moon_part_timer = 0
+                moon_particles.emit(
+                    HOLE_X + random.randint(0, 10),
+                    HOLE_Y + random.randint(0, HOLE_H),
+                    colour=(180, 220, 255),
+                    count=2, speed=0.8, size=2, lifetime=50)
+                moon_particles.emit(
+                    HOLE_X + HOLE_W + random.randint(-10, 0),
+                    HOLE_Y + random.randint(0, HOLE_H),
+                    colour=(180, 220, 255),
+                    count=2, speed=0.8, size=2, lifetime=50)
+                moon_particles.emit(
+                    HOLE_X + random.randint(0, HOLE_W),
+                    HOLE_Y + random.randint(0, 10),
+                    colour=(200, 230, 255),
+                    count=2, speed=0.6, size=2, lifetime=40)
+                moon_particles.emit(
+                    HOLE_X + random.randint(0, HOLE_W),
+                    HOLE_Y + HOLE_H + random.randint(-10, 0),
+                    colour=(200, 230, 255),
+                    count=2, speed=0.6, size=2, lifetime=40)
+        moon_particles.update()
 
         # EXIT CHECK
         if door_open and player_rect_cur.colliderect(exit_door):
@@ -561,18 +611,18 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                          (HOLE_X + 4, HOLE_Y + 4,
                           HOLE_W - 8, HOLE_H - 8), 2)
         crack_lines = [
-            ((HOLE_X,          HOLE_Y),
-             (HOLE_X - 30,     HOLE_Y - 20)),
+            ((HOLE_X, HOLE_Y),
+             (HOLE_X - 30, HOLE_Y - 20)),
             ((HOLE_X + HOLE_W, HOLE_Y),
              (HOLE_X + HOLE_W + 25, HOLE_Y - 15)),
-            ((HOLE_X,          HOLE_Y + HOLE_H),
-             (HOLE_X - 20,     HOLE_Y + HOLE_H + 25)),
+            ((HOLE_X, HOLE_Y + HOLE_H),
+             (HOLE_X - 20, HOLE_Y + HOLE_H + 25)),
             ((HOLE_X + HOLE_W, HOLE_Y + HOLE_H),
              (HOLE_X + HOLE_W + 20, HOLE_Y + HOLE_H + 20)),
-            ((HOLE_X + 100,    HOLE_Y),
-             (HOLE_X + 80,     HOLE_Y - 35)),
-            ((HOLE_X + 200,    HOLE_Y + HOLE_H),
-             (HOLE_X + 220,    HOLE_Y + HOLE_H + 30)),
+            ((HOLE_X + 100, HOLE_Y),
+             (HOLE_X + 80, HOLE_Y - 35)),
+            ((HOLE_X + 200, HOLE_Y + HOLE_H),
+             (HOLE_X + 220, HOLE_Y + HOLE_H + 30)),
         ]
         for start, end in crack_lines:
             pygame.draw.line(game_surf, (60, 65, 75), start, end, 2)
@@ -581,11 +631,15 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
         if moon_triggered:
             moon.draw_moon(game_surf, hole_rect)
 
+        if moon_triggered:
+            moon.draw_moon(game_surf, hole_rect)
+        moon_particles.draw(game_surf)
+
         # Moonlight circles
         for c in moon_circles:
             cx, cy = c["center"]
-            r      = c["radius"]
-            circ   = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
+            r = c["radius"]
+            circ = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
             pygame.draw.circle(circ, (200, 220, 255, 70), (r, r), r)
             game_surf.blit(circ, (cx - r, cy - r))
 
@@ -666,6 +720,9 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
             int(player_pos.y)
         )
 
+        potion_particles.update()
+        potion_particles.draw(game_surf)
+
         # Glitch
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
@@ -673,7 +730,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
 
         # Prompts
         if near_fuse:
-            fb        = fuse_boxes[active_fuse]
+            fb = fuse_boxes[active_fuse]
             needs_key = getattr(fb, "requires_key", False)
             needs_all = getattr(fb, "requires_all", False)
             others_done = all(

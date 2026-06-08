@@ -10,6 +10,7 @@ from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.pause import run_pause
 from systems.potion import PotionInventory
 from sprite_loader import AnimatedSprite
+from systems.particles import ParticleSystem
 
 
 def is_point_in_polygon(point, polygon):
@@ -80,32 +81,33 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     WIDTH, HEIGHT = screen.get_size()
 
     MOON_COLOR = (200, 220, 255, 80)
     PLAYER_COL = (180, 210, 255)
-    WHITE      = (255, 255, 255)
+    WHITE = (255, 255, 255)
 
     try:
-        font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
+        font = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
         font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 14)
     except:
-        font       = pygame.font.SysFont("courier", 20)
+        font = pygame.font.SysFont("courier", 20)
         font_small = pygame.font.SysFont("courier", 14)
 
     # ROOM BOUNDARIES
-    ROOM_LEFT   = 80
-    ROOM_TOP    = 100
-    ROOM_RIGHT  = 1150
+    ROOM_LEFT = 80
+    ROOM_TOP = 100
+    ROOM_RIGHT = 1150
     ROOM_BOTTOM = 620
 
     # PLAYER
-    player_pos   = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
-    PLAYER_SIZE  = 48
+    player_pos = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
+    PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health       = 100
-    max_health   = 100
+    health = 100
+    max_health = 100
 
     player_sprite = AnimatedSprite(
         "assets/sprites/player.png",
@@ -116,9 +118,9 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
     # FLASHLIGHT
     FLASHLIGHT_RADIUS = 500
-    CONE_ANGLE        = math.radians(45)
-    darkness          = pygame.Surface((WIDTH, HEIGHT))
-    glitch_intensity  = 0
+    CONE_ANGLE = math.radians(45)
+    darkness = pygame.Surface((WIDTH, HEIGHT))
+    glitch_intensity = 0
 
     # MOONLIGHT BEAM
     moon_beam = [
@@ -129,8 +131,8 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
     ]
 
     # OBJECTS
-    stat_obj    = StationaryBox(550, 300, 160, 50)
-    mov_obj     = MovableBox(300, 340, 80, 50)
+    stat_obj = StationaryBox(550, 300, 160, 50)
+    mov_obj = MovableBox(300, 340, 80, 50)
     room_bounds = (ROOM_LEFT, ROOM_TOP, ROOM_RIGHT, ROOM_BOTTOM)
 
     # FUSE BOXES
@@ -150,18 +152,18 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
     while running:
 
         # CENTER + ANGLE
-        pcx    = player_pos.x + PLAYER_SIZE // 2
-        pcy    = player_pos.y + PLAYER_SIZE // 2
+        pcx = player_pos.x + PLAYER_SIZE // 2
+        pcy = player_pos.y + PLAYER_SIZE // 2
         mx, my = pygame.mouse.get_pos()
-        angle  = math.atan2(my - pcy, mx - pcx)
+        angle = math.atan2(my - pcy, mx - pcx)
 
         # CHECK NEARBY FUSE BOX
         active_fuse = None
-        near_fuse   = False
+        near_fuse = False
         for i, fb in enumerate(fuse_boxes):
             if not fb.fixed and fb.is_near(pcx, pcy):
                 active_fuse = i
-                near_fuse   = True
+                near_fuse = True
 
         # EVENTS
         for event in pygame.event.get():
@@ -181,9 +183,27 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
                 if event.key == pygame.K_e and active_fuse is not None:
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
-                        fuse_boxes[active_fuse].fixed = True
+                        fuse_boxes[active_fuse].fix()
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
         # MOVEMENT
         keys = pygame.key.get_pressed()
@@ -325,6 +345,9 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
             int(player_pos.x),
             int(player_pos.y)
         )
+
+        potion_particles.update()
+        potion_particles.draw(game_surf)
 
         # Glitch
         if glitch_intensity > 0:

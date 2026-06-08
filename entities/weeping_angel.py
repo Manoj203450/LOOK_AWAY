@@ -1,6 +1,8 @@
 import pygame
 import math
 from sprite_loader import WeepingAngelSprite
+from systems.particles import ParticleSystem
+
 
 class WeepingAngel:
     def __init__(self, x, y):
@@ -13,6 +15,11 @@ class WeepingAngel:
             "assets/sprites/weeping_angel.png",
             scale=1
         )
+
+        # PARTICLE SETUP
+        self.particles = ParticleSystem()
+        self.dust_timer = 0
+        self.DUST_INTERVAL = 12
 
     def update(self, player_pos, player_size, angle,
                cone_angle, flashlight_radius, valid_rooms=None):
@@ -35,10 +42,11 @@ class WeepingAngel:
         if in_flashlight:
             self.frozen = True
             self.state  = "frozen"
+            self.particles.update()
             return
 
         self.frozen = False
-        self.state  = "stalk"
+        self.state = "stalk"
 
         direction = pygame.Vector2(pcx - ecx, pcy - ecy)
         if direction.length() > 0:
@@ -46,11 +54,25 @@ class WeepingAngel:
 
         new_pos = self.pos + direction * self.speed
 
-        # Only move if inside valid area
         if self._in_valid_area(new_pos, valid_rooms):
             self.pos = new_pos
 
+        self.dust_timer += 1
+        if self.dust_timer >= self.DUST_INTERVAL:
+            self.dust_timer = 0
+            self.particles.emit(
+                ecx, ecy,
+                colour=(180, 220, 255),
+                count=3,
+                speed=0.6,
+                size=2,
+                lifetime=90
+            )
+
+        self.particles.update()
+
     def draw(self, screen):
+        self.particles.draw(screen)
 
         self.sprite.draw(
             screen,
@@ -69,7 +91,8 @@ class WeepingAngel:
             screen.blit(label, (self.pos.x, self.pos.y - 18))
 
     def get_rect(self):
-        return pygame.Rect(self.pos.x, self.pos.y, self.size, self.size)
+        return pygame.Rect(self.pos.x, self.pos.y,
+                           self.size, self.size)
 
     def _in_valid_area(self, pos, valid_rooms):
         if valid_rooms is None:

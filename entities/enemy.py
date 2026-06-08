@@ -1,12 +1,15 @@
 import pygame
 import math
+import random
 from sprite_loader import AnimatedSprite
+from systems.particles import ParticleSystem
+
 
 class Enemy:
     def __init__(self, x, y):
         self.pos = pygame.Vector2(x, y)
         self.size = 48
-        self.speed = 1.8 # Change this if enemy is too fast
+        self.speed = 1.8
         self.color = (180, 50, 50)
 
         self.sprite = AnimatedSprite(
@@ -16,8 +19,7 @@ class Enemy:
             scale=1
         )
 
-        # The AI state
-        self. state = "patrol"
+        self.state = "patrol"
         self.stun_timer = 0
         self.detect_range = 180
         self.patrol_points = [
@@ -26,7 +28,12 @@ class Enemy:
         ]
         self.patrol_index = 0
 
-    def update(self, player_pos, player_size, valid_rooms=None, hole_rect=None):
+        self.particles = ParticleSystem()
+        self.drip_timer = 0
+        self.DRIP_INTERVAL = random.randint(30, 90)
+
+    def update(self, player_pos, player_size,
+               valid_rooms=None, hole_rect=None):
         ecx = self.pos.x + self.size // 2
         ecy = self.pos.y + self.size // 2
         pcx = player_pos.x + player_size // 2
@@ -41,6 +48,7 @@ class Enemy:
             self.stun_timer -= 1
             if self.stun_timer <= 0:
                 self.state = "patrol"
+            self.particles.update()
             return
 
         if dist_to_player < self.detect_range:
@@ -67,7 +75,7 @@ class Enemy:
             direction = target - self.pos
             if direction.length() < 5:
                 self.patrol_index = (
-                                            self.patrol_index + 1) % len(self.patrol_points)
+                    self.patrol_index + 1) % len(self.patrol_points)
             else:
                 if direction.length() > 0:
                     direction = direction.normalize()
@@ -76,31 +84,55 @@ class Enemy:
                         not self._in_hole(new_pos, hole_rect):
                     self.pos = new_pos
 
-    def _in_valid_area(self, pos, valid_rooms):
-        if valid_rooms is None:
-            return True
-        entity_rect = pygame.Rect(pos.x, pos.y, self.size, self.size)
-        return any(room.contains(entity_rect) for room in valid_rooms)
+        self.drip_timer += 1
+        if self.drip_timer >= self.DRIP_INTERVAL:
+            self.drip_timer = 0
+            self.DRIP_INTERVAL = random.randint(30, 90)
+            drip_x = self.pos.x + random.randint(8, self.size - 8)
+            drip_y = self.pos.y + random.randint(8, self.size - 8)
+            self.particles.emit(
+                drip_x, drip_y,
+                colour=(180, 0, 0),
+                count=5,
+                speed=1.2,
+                size=3,
+                lifetime=35
+            )
 
-    def _in_hole(self, pos, hole_rect):
-        if hole_rect is None:
-            return False
-        entity_rect = pygame.Rect(pos.x, pos.y, self.size, self.size)
-        return hole_rect.colliderect(entity_rect)
+        self.particles.update()
 
-    def stun(self, duration=180):
-        self.state = "stunned"
+    def stun(self, duration=180, hit_x=None, hit_y=None):
+        self.state      = "stunned"
         self.stun_timer = duration
-        self.color = (80, 80, 80)
+        self.color      = (80, 80, 80)
+
+        if hit_x is not None and hit_y is not None:
+            self.particles.emit(
+                hit_x, hit_y,
+                colour=(255, 200, 50),
+                count=12,
+                speed=3.5,
+                size=4,
+                lifetime=20
+            )
+            self.particles.emit(
+                hit_x, hit_y,
+                colour=(255, 255, 255),
+                count=6,
+                speed=5.0,
+                size=2,
+                lifetime=15
+            )
 
     def draw(self, screen):
+        self.particles.draw(screen)
+
         self.sprite.draw(
             screen,
             int(self.pos.x),
             int(self.pos.y)
         )
 
-        # Indicator that shows state of enemy
         try:
             font = pygame.font.SysFont("courier", 12)
         except:
@@ -114,13 +146,20 @@ class Enemy:
             screen.blit(label, (self.pos.x + 4, self.pos.y - 18))
 
     def get_rect(self):
-        return pygame.Rect(self.pos.x, self.pos.y, self.size, self.size)
-
+        return pygame.Rect(self.pos.x, self.pos.y,
+                           self.size, self.size)
 
     def _in_valid_area(self, pos, valid_rooms):
         if valid_rooms is None:
-            return True  # no restriction
+            return True
         entity_rect = pygame.Rect(
             pos.x, pos.y, self.size, self.size)
         return any(room.contains(entity_rect)
                    for room in valid_rooms)
+
+    def _in_hole(self, pos, hole_rect):
+        if hole_rect is None:
+            return False
+        entity_rect = pygame.Rect(pos.x, pos.y,
+                                  self.size, self.size)
+        return hole_rect.colliderect(entity_rect)

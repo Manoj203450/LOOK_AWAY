@@ -13,6 +13,7 @@ from systems.pause import run_pause
 from systems.audio import play_music, stop_music
 from entities.shade import Shade
 from sprite_loader import AnimatedSprite
+from systems.particles import ParticleSystem
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ def run_level4(screen, clock, start_with_wrench=False,
 
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     WIDTH, HEIGHT = screen.get_size()
 
@@ -249,10 +251,28 @@ def run_level4(screen, clock, start_with_wrench=False,
                 if event.key == pygame.K_e and active_node is not None:
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
-                        all_nodes[active_node].fixed = True
+                        all_nodes[active_node].fix()
 
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and has_wrench:
@@ -340,7 +360,7 @@ def run_level4(screen, clock, start_with_wrench=False,
             struck = False
             for sh in shades:
                 if sh.get_rect().colliderect(wr):
-                    sh.stun()
+                    sh.stun(hit_x=w["pos"].x, hit_y=w["pos"].y)
                     struck = True
             in_bounds = any(r.collidepoint(w["pos"].x, w["pos"].y)
                             for r in all_rooms)
@@ -479,6 +499,9 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         # player
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))
+
+        potion_particles.update()
+        potion_particles.draw(game_surf)
 
         # glitch
         if glitch_intensity > 0:

@@ -13,6 +13,7 @@ from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from entities.weeping_angel import WeepingAngel
 from sprite_loader import AnimatedSprite
+from systems.particles import ParticleSystem
 
 
 def is_point_in_polygon(point, polygon):
@@ -35,10 +36,10 @@ def in_circle(pcx, pcy, cx, cy, r):
 def run_death_screen(screen, clock):
     WIDTH, HEIGHT = screen.get_size()
     try:
-        font_big   = pygame.font.Font("assets/fonts/menu_font.ttf", 64)
+        font_big = pygame.font.Font("assets/fonts/menu_font.ttf", 64)
         font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 24)
     except:
-        font_big   = pygame.font.SysFont("courier", 64, bold=True)
+        font_big = pygame.font.SysFont("courier", 64, bold=True)
         font_small = pygame.font.SysFont("courier", 24)
 
     for alpha in range(0, 180, 3):
@@ -58,10 +59,10 @@ def run_death_screen(screen, clock):
         clock.tick(60)
 
     screen.fill((0, 0, 0))
-    title    = font_big.render("YOU LOOKED.", True, (180, 30, 30))
+    title = font_big.render("YOU LOOKED.", True, (180, 30, 30))
     subtitle = font_small.render("the moon has taken you.",
                                  True, (100, 100, 100))
-    hint     = font_small.render("press any key to return",
+    hint = font_small.render("press any key to return",
                                  True, (60, 60, 60))
     screen.blit(title,
                 (WIDTH//2 - title.get_width()//2,    HEIGHT//2 - 80))
@@ -88,6 +89,7 @@ def run_level3(screen, clock, start_with_wrench=False,
     # Use passed potion inventory or create new one
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     WIDTH, HEIGHT = screen.get_size()
 
@@ -110,10 +112,10 @@ def run_level3(screen, clock, start_with_wrench=False,
     )
 
     try:
-        font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
+        font = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
         font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 14)
     except:
-        font       = pygame.font.SysFont("courier", 20)
+        font = pygame.font.SysFont("courier", 20)
         font_small = pygame.font.SysFont("courier", 14)
 
     # ROOMS
@@ -131,23 +133,23 @@ def run_level3(screen, clock, start_with_wrench=False,
                  CORR_AB, CORR_AC, CORR_BD, CORR_CD]
 
     # PLAYER
-    player_pos   = pygame.Vector2(ROOM_A.x + 60, ROOM_A.centery)
-    PLAYER_SIZE  = 48
+    player_pos = pygame.Vector2(ROOM_A.x + 60, ROOM_A.centery)
+    PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health       = 100
-    max_health   = 100
+    health = 100
+    max_health = 100
 
     # FLASHLIGHT
     FLASHLIGHT_RADIUS = 500
-    CONE_ANGLE        = math.radians(45)
-    darkness          = pygame.Surface((WIDTH, HEIGHT))
+    CONE_ANGLE = math.radians(45)
+    darkness = pygame.Surface((WIDTH, HEIGHT))
     glitch_intensity  = 0
 
     # WRENCH
-    has_wrench       = start_with_wrench
+    has_wrench = start_with_wrench
     wrench_on_ground = None
-    wrenches         = []
-    WRENCH_SPEED     = 10
+    wrenches = []
+    WRENCH_SPEED = 10
 
     # MOONLIGHT
     moon_circles_a = [
@@ -190,14 +192,14 @@ def run_level3(screen, clock, start_with_wrench=False,
     room_bounds_c = (ROOM_C.x, ROOM_C.y, ROOM_C.right, ROOM_C.bottom)
 
     # FUSE BOXES
-    fuse_a    = FuseBox(ROOM_A.x + 30,     ROOM_A.y + 30)
-    fuse_b    = FuseBox(ROOM_B.right - 60, ROOM_B.y + 30)
-    fuse_d    = FuseBox(ROOM_D.x + 30,     ROOM_D.bottom - 60)
+    fuse_a = FuseBox(ROOM_A.x + 30, ROOM_A.y + 30)
+    fuse_b = FuseBox(ROOM_B.right - 60, ROOM_B.y + 30)
+    fuse_d = FuseBox(ROOM_D.x + 30, ROOM_D.bottom - 60)
     all_fuses = [fuse_a, fuse_b, fuse_d]
 
     # WEEPING ANGELS
-    angel_b       = WeepingAngel(ROOM_B.x + 200, ROOM_B.y + 150)
-    angel_d       = WeepingAngel(ROOM_D.x + 200, ROOM_D.y + 100)
+    angel_b = WeepingAngel(ROOM_B.x + 200, ROOM_B.y + 150)
+    angel_d = WeepingAngel(ROOM_D.x + 200, ROOM_D.y + 100)
     angel_b.speed = 2.0
     angel_d.speed = 2.0
 
@@ -207,10 +209,10 @@ def run_level3(screen, clock, start_with_wrench=False,
     door_open = False
 
     # DIALOGUE FLAGS
-    intro_done         = False
-    angel_warned       = False
-    question_asked     = False
-    fuse_b_dialogue    = False
+    intro_done = False
+    angel_warned = False
+    question_asked = False
+    fuse_b_dialogue = False
     exit_dialogue_done = False
 
     # DRAW
@@ -221,10 +223,10 @@ def run_level3(screen, clock, start_with_wrench=False,
     while running:
 
         # CENTER + ANGLE
-        pcx    = player_pos.x + PLAYER_SIZE // 2
-        pcy    = player_pos.y + PLAYER_SIZE // 2
+        pcx = player_pos.x + PLAYER_SIZE // 2
+        pcy = player_pos.y + PLAYER_SIZE // 2
         mx, my = pygame.mouse.get_pos()
-        angle  = math.atan2(my - pcy, mx - pcx)
+        angle = math.atan2(my - pcy, mx - pcx)
 
         player_rect_cur = pygame.Rect(
             player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
@@ -239,50 +241,50 @@ def run_level3(screen, clock, start_with_wrench=False,
         if not intro_done:
             intro_done = True
             run_dialogue(screen, clock, [
-                ("I made it this far...",         WHITE),
-                ("...",                           WHITE),
-                ("Who are you?",                  WHITE),
-                ("...",                           RED),
-                ("Why do you keep warning me?",   WHITE),
-                ("...",                           RED),
-                ("...Hello?",                     WHITE),
-                ("DON'T MOVE.",                   RED),
+                ("I made it this far...", WHITE),
+                ("...", WHITE),
+                ("Who are you?", WHITE),
+                ("...", RED),
+                ("Why do you keep warning me?", WHITE),
+                ("...", RED),
+                ("...Hello?", WHITE),
+                ("DON'T MOVE.", RED),
             ], black_bg=True)
 
         if in_room_b and not angel_warned:
             angel_warned = True
             run_dialogue(screen, clock, [
-                ("Something is in here.",         WHITE),
-                ("DON'T LOOK AWAY.",              RED),
-                ("Keep your light on it.",        RED),
+                ("Something is in here.", WHITE),
+                ("DON'T LOOK AWAY.", RED),
+                ("Keep your light on it.", RED),
             ])
 
         if in_room_c and not question_asked:
             question_asked = True
             run_dialogue(screen, clock, [
-                ("Are you even real?",            WHITE),
-                ("...",                           RED),
-                ("Or am I just losing my mind?",  WHITE),
-                ("WATCH YOUR STEP.",              RED),
+                ("Are you even real?", WHITE),
+                ("...", RED),
+                ("Or am I just losing my mind?", WHITE),
+                ("WATCH YOUR STEP.", RED),
             ])
 
         if in_room_b and fuse_b.fixed and not fuse_b_dialogue:
             fuse_b_dialogue = True
             run_dialogue(screen, clock, [
-                ("One more...",                   WHITE),
-                ("...",                           RED),
-                ("Where are you taking me?",      WHITE),
-                ("KEEP MOVING.",                  RED),
+                ("One more...", WHITE),
+                ("...", RED),
+                ("Where are you taking me?", WHITE),
+                ("KEEP MOVING.", RED),
             ])
 
         # CHECK NEARBY FUSE BOXES
         active_fuse = None
-        near_fuse   = False
+        near_fuse = False
 
         for i, fb in enumerate(all_fuses):
             if not fb.fixed and fb.is_near(pcx, pcy):
                 active_fuse = i
-                near_fuse   = True
+                near_fuse = True
 
         # EVENTS
         for event in pygame.event.get():
@@ -303,10 +305,27 @@ def run_level3(screen, clock, start_with_wrench=False,
                 if event.key == pygame.K_e and active_fuse is not None:
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
-                        all_fuses[active_fuse].fixed = True
-
+                        all_fuses[active_fuse].fix()
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and has_wrench:
@@ -316,8 +335,8 @@ def run_level3(screen, clock, start_with_wrench=False,
                     if dist > 0:
                         has_wrench = False
                         wrenches.append({
-                            "pos":  pygame.Vector2(pcx, pcy),
-                            "vel":  pygame.Vector2(
+                            "pos": pygame.Vector2(pcx, pcy),
+                            "vel": pygame.Vector2(
                                         dx_w/dist * WRENCH_SPEED,
                                         dy_w/dist * WRENCH_SPEED),
                             "life": 30,
@@ -328,9 +347,9 @@ def run_level3(screen, clock, start_with_wrench=False,
         keys = pygame.key.get_pressed()
         dx = 0
         dy = 0
-        if keys[pygame.K_w] or keys[pygame.K_UP]:    dy -= PLAYER_SPEED
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += PLAYER_SPEED
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= PLAYER_SPEED
+        if keys[pygame.K_w] or keys[pygame.K_UP]: dy -= PLAYER_SPEED
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: dy += PLAYER_SPEED
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]: dx -= PLAYER_SPEED
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += PLAYER_SPEED
 
         moving = (dx != 0 or dy != 0)
@@ -432,7 +451,7 @@ def run_level3(screen, clock, start_with_wrench=False,
             w["rotation"] += 20
 
             wrench_rect = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
-            in_bounds   = any(room.contains(wrench_rect)
+            in_bounds = any(room.contains(wrench_rect)
                               for room in all_rooms)
 
             if not in_bounds or w["life"] <= 0:
@@ -448,7 +467,7 @@ def run_level3(screen, clock, start_with_wrench=False,
             gr = pygame.Rect(
                 wrench_on_ground.x, wrench_on_ground.y, 16, 16)
             if player_rect_cur.colliderect(gr):
-                has_wrench       = True
+                has_wrench = True
                 wrench_on_ground = None
 
         # MOONLIGHT DAMAGE
@@ -512,15 +531,15 @@ def run_level3(screen, clock, start_with_wrench=False,
                 # Dialogue on black screen
                 screen.fill((0, 0, 0))
                 run_dialogue(screen, clock, [
-                    ("You are close.",                       RED),
-                    ("Who are you?",                         WHITE),
-                    ("Go to the canons.",                    RED),
-                    ("Restore all powers to activate it.",   RED),
-                    ("What?",                                WHITE),
-                    ("The moon can be destroyed.",           RED),
-                    ("The canons... I remember...",          WHITE),
-                    ("...",                                  RED),
-                    ("The canons are your only hope.",       RED),
+                    ("You are close.", RED),
+                    ("Who are you?",  WHITE),
+                    ("Go to the canons.", RED),
+                    ("Restore all powers to activate it.", RED),
+                    ("What?", WHITE),
+                    ("The moon can be destroyed.", RED),
+                    ("The canons... I remember...", WHITE),
+                    ("...", RED),
+                    ("The canons are your only hope.", RED),
                     ("Lets destroy this big rock in space.", WHITE),
                 ], black_bg=True)
                 return "level4"
@@ -630,6 +649,10 @@ def run_level3(screen, clock, start_with_wrench=False,
             int(player_pos.x),
             int(player_pos.y)
         )
+
+        potion_particles.update()
+        potion_particles.draw(game_surf)
+
         # Glitch
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
@@ -638,8 +661,7 @@ def run_level3(screen, clock, start_with_wrench=False,
         if near_fuse:
             prompt = font.render(
                 "PRESS E TO FIX", True, (200, 200, 100))
-            game_surf.blit(prompt,
-                           (pcx - prompt.get_width()//2, pcy - 50))
+            game_surf.blit(prompt, (pcx - prompt.get_width()//2, pcy - 50))
 
         # No wrench warning at exit
         if door_open and player_rect_cur.colliderect(exit_door) \

@@ -1,6 +1,7 @@
 import pygame
 import sys
 import math
+import random
 
 from systems.lever import Lever
 from systems.hud import draw_hud
@@ -11,6 +12,7 @@ from systems.potion import PotionInventory
 from systems.audio import stop_music
 from entities.crewmate import Crewmate
 from sprite_loader import AnimatedSprite
+from systems.particles import ParticleSystem
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,8 +156,13 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     WIDTH, HEIGHT = screen.get_size()
+
+    cannon_particles = ParticleSystem()
+    cannon_part_timer = 0
+    CANNON_PART_INTERVAL = 4
 
     stop_music()   # silence — let the tension breathe
 
@@ -282,6 +289,31 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         # Check all levers fixed
         cannon_ready = all(lv.fixed for lv in levers)
 
+        if cannon_ready:
+            cannon_part_timer += 1
+            if cannon_part_timer >= CANNON_PART_INTERVAL:
+                cannon_part_timer = 0
+                cannon_particles.emit(
+                    cannon_rect.centerx + random.randint(-10, 10),
+                    cannon_rect.top,
+                    colour=(0, 150, 255),
+                    count=3,
+                    speed=1.5,
+                    size=3,
+                    lifetime=40
+                )
+                # ENERGY SPARKS
+                cannon_particles.emit(
+                    cannon_rect.centerx + random.randint(-15, 15),
+                    cannon_rect.centery,
+                    colour=(255, 255, 255),
+                    count=2,
+                    speed=2.0,
+                    size=2,
+                    lifetime=25
+                )
+        cannon_particles.update()
+
         # Nearby lever (unfixed, within range)
         near_lever = None
         for lv in levers:
@@ -313,7 +345,25 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                         return "menu"
 
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
                 # Cannon — single press E triggers choice dialogue
                 if event.key == pygame.K_e and near_cannon \
@@ -406,10 +456,10 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
             in_bounds = (ROOM_LEFT <= w["pos"].x <= ROOM_RIGHT and
                          ROOM_TOP  <= w["pos"].y <= ROOM_BOTTOM)
             if wr.colliderect(crewmate.get_rect()):
-                crewmate.stun(180)
+                crewmate.stun(180, hit_x=w["pos"].x, hit_y=w["pos"].y)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
-                continue
+
             if not in_bounds or w["life"] <= 0:
                 wrench_on_ground = pygame.Vector2(
                     max(ROOM_LEFT, min(ROOM_RIGHT,  w["pos"].x)),
@@ -458,6 +508,20 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                 cannon_rect.centerx - c_label.get_width() // 2,
                 cannon_rect.centery - c_label.get_height() // 2))
 
+        cannon_img = cannon_img_on if cannon_ready else cannon_img_off
+        if cannon_img:
+            game_surf.blit(cannon_img, (cannon_rect.x, cannon_rect.y))
+        else:
+            cannon_col = (80, 180, 80) if cannon_ready else (80, 80, 80)
+            pygame.draw.rect(game_surf, cannon_col, cannon_rect)
+            pygame.draw.rect(game_surf, (120, 120, 120), cannon_rect, 2)
+            c_label = font_small.render("CANNON", True, (200, 200, 200))
+            game_surf.blit(c_label, (
+                cannon_rect.centerx - c_label.get_width() // 2,
+                cannon_rect.centery - c_label.get_height() // 2))
+
+        cannon_particles.draw(game_surf)
+
         # Pillars
         for p in all_pillars:
             p.draw(game_surf, font_small)
@@ -484,6 +548,9 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
 
         # Player
         player_sprite.draw(game_surf, int(player_pos.x), int(player_pos.y))
+
+        potion_particles.update()
+        potion_particles.draw(game_surf)
 
         # ── prompts ───────────────────────────────────────────────────
         if near_lever is not None and player_stun_timer == 0:

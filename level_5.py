@@ -17,6 +17,7 @@ from entities.weeping_angel import WeepingAngel
 from entities.enemy         import Enemy
 from entities.crewmate      import Crewmate
 from sprite_loader          import AnimatedSprite
+from systems.particles import ParticleSystem
 
 
 # Helpers
@@ -76,6 +77,7 @@ def run_level5(screen, clock, start_with_wrench=True,
     """
     if potion_inv is None:
         potion_inv = PotionInventory()
+    potion_particles = ParticleSystem()
 
     WIDTH, HEIGHT = screen.get_size()
 
@@ -294,10 +296,28 @@ def run_level5(screen, clock, start_with_wrench=True,
                 if event.key == pygame.K_e and active_node is not None:
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
-                        all_nodes[active_node].fixed = True
+                        all_nodes[active_node].fix()
 
                 if event.key == pygame.K_q:
+                    old_health = health
                     health = potion_inv.use(health, max_health)
+                    if health > old_health:
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(100, 220, 100),
+                            count=15,
+                            speed=2.5,
+                            size=3,
+                            lifetime=40
+                        )
+                        potion_particles.emit(
+                            pcx, pcy,
+                            colour=(255, 255, 255),
+                            count=8,
+                            speed=4.0,
+                            size=2,
+                            lifetime=25
+                        )
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and has_wrench:
@@ -423,7 +443,10 @@ def run_level5(screen, clock, start_with_wrench=True,
 
             for ent in all_stun_targets:
                 if ent.get_rect().colliderect(wr):
-                    ent.stun()
+                    try:
+                        ent.stun(hit_x=w["pos"].x, hit_y=w["pos"].y)
+                    except TypeError:
+                        ent.stun()
 
                     if ent is crewmate and not crewmate_spoken:
                         crewmate_spoken = True
@@ -623,6 +646,9 @@ def run_level5(screen, clock, start_with_wrench=True,
 
         # Player drawn AFTER flashlight (always visible)
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))
+
+        potion_particles.update()
+        potion_particles.draw(game_surf)
 
         # Glitch / scanline effect
         if glitch_intensity > 0:
