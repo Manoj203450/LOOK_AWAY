@@ -13,11 +13,9 @@ from systems.audio import play_music, stop_music, play_sfx
 from entities.crewmate import Crewmate
 from sprite_loader import AnimatedSprite
 from systems.particles import ParticleSystem
-<<<<<<< HEAD
 from systems.settings_manager import settings
-=======
 from cinematic import run_cinematic_ending
->>>>>>> fb499b17ff275b2549f49be78757b52c610fdd8f
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -157,7 +155,8 @@ def run_cannon_choice(screen, clock):
 # LEVEL 6
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_level6(screen, clock, potion_inv=None, **kwargs):
+def run_level6(screen, clock, start_with_wrench=True,
+               potion_inv=None, start_health=100, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -198,7 +197,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
     player_pos        = pygame.Vector2(ROOM_CX - 24, ROOM_BOTTOM - 100)
     PLAYER_SIZE       = 48
     PLAYER_SPEED      = 4
-    health            = 100
+    health            = start_health
     max_health        = 100
     player_stun_timer = 0
 

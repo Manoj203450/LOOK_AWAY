@@ -71,7 +71,7 @@ def fade_to_black(screen, clock):
 
 # Start point
 def run_level5(screen, clock, start_with_wrench=True,
-               potion_inv=None, **kwargs):
+               potion_inv=None, start_health=100, **kwargs):
     """
     Level 5 — THE THRESHOLD.
     Called by main.py's play_level() wrapper.
@@ -129,7 +129,7 @@ def run_level5(screen, clock, start_with_wrench=True,
     player_pos   = pygame.Vector2(ROOM_A.x + 40, ROOM_A.centery - 24)
     PLAYER_SIZE  = 48
     PLAYER_SPEED = 4
-    health       = 100
+    health       = start_health
     max_health   = 100
     player_stun  = 0
 
@@ -554,7 +554,7 @@ def run_level5(screen, clock, start_with_wrench=True,
                     ("...what have I done?",                     WHITE),
                 ], black_bg=True)
                 stop_music()
-                return "level6"
+                return "level6", health
 
         # Glimpse timer decay
         if glimpse_timer > 0:

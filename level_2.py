@@ -88,7 +88,7 @@ def run_death_screen(screen, clock):
         clock.tick(60)
 
 
-def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
+def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health=100, **kwargs):
     # Use passed potion inventory or create new one
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -140,7 +140,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
     player_pos = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
     PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health = 100
+    health = start_health
     max_health = 100
 
     player_sprites = AnimatedSprite(
@@ -622,7 +622,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, **kwargs):
                 pass  # show warning in draw section
             else:
                 if _flood_sfx: _flood_sfx.stop()
-                return "level3"
+                return "level3", health
 
         # DEATH CHECK
         if health <= 0:

@@ -24,31 +24,40 @@ clock = pygame.time.Clock()
 
 def play_level(level_func, screen, clock, **kwargs):
     first_run = True
+    start_health = kwargs.pop("start_health", 100)
     while True:
         if first_run:
             kwargs.pop("restart_music", None)
-            result = level_func(screen, clock, **kwargs)
+            result = level_func(screen, clock,
+                                start_health=start_health, **kwargs)
         else:
             kwargs.pop("restart_music", None)
             result = level_func(screen, clock,
+                                start_health=100,
                                 restart_music=True, **kwargs)
         first_run = False
 
-        if result == "menu":
+        if isinstance(result, tuple):
+            level_result, exit_health = result
+        else:
+            level_result = result
+            exit_health = 100
+
+        if level_result == "menu":
             stop_music()
-            return "menu"
-        if result is not None:
-            return result
+            return "menu", 100
+        if level_result is not None:
+            return level_result, exit_health
 
 def run_game_from(level, gives_wrench, screen, clock):
     from systems.potion import PotionInventory
     potion_inv = PotionInventory()
+    carry_health = 100
 
     if level <= 1:
-        play_music("assets/audio/lvl1.ogg",
-                   loop=True, volume=0.3)
-        result = play_level(run_level1, screen, clock,
-                            potion_inv=potion_inv)
+        play_music("assets/audio/lvl1.ogg", loop=True, volume=0.3)
+        result, carry_health = play_level(run_level1, screen, clock,
+                                          potion_inv=potion_inv)
         if result == "menu":
             return
         if result != "level2":
@@ -60,12 +69,11 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 2:
         if not music_already_playing:
-            # Coming from level select — start music fresh
-            play_music("assets/audio/audio_1.ogg",
-                       loop=True, volume=0.3)
-        result = play_level(run_level2, screen, clock,
-                            potion_inv=potion_inv,
-                            restart_music=False)  # ← always False here
+            play_music("assets/audio/audio_1.ogg", loop=True, volume=0.3)
+        result, carry_health = play_level(run_level2, screen, clock,
+                                          potion_inv=potion_inv,
+                                          restart_music=False,
+                                          start_health=carry_health)
         if result == "menu":
             return
         if result != "level3":
@@ -74,11 +82,11 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 3:
         stop_music()
-        play_music("assets/audio/audio_2.ogg",
-                   loop=True, volume=0.3)
-        result = play_level(run_level3, screen, clock,
-                            start_with_wrench=True,
-                            potion_inv=potion_inv)
+        play_music("assets/audio/audio_2.ogg", loop=True, volume=0.3)
+        result, carry_health = play_level(run_level3, screen, clock,
+                                          start_with_wrench=True,
+                                          potion_inv=potion_inv,
+                                          start_health=carry_health)
         if result == "menu":
             return
         if result != "level4":
@@ -88,9 +96,10 @@ def run_game_from(level, gives_wrench, screen, clock):
     if level <= 4:
         stop_music()
         play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
-        result = play_level(run_level4, screen, clock,
-                            start_with_wrench=True,
-                            potion_inv=potion_inv)
+        result, carry_health = play_level(run_level4, screen, clock,
+                                          start_with_wrench=True,
+                                          potion_inv=potion_inv,
+                                          start_health=carry_health)
         if result == "menu":
             return
         if result not in ("level5", "level6"):
@@ -98,9 +107,10 @@ def run_game_from(level, gives_wrench, screen, clock):
         level = 5
 
     if level <= 5:
-        result = play_level(run_level5, screen, clock,
-                            start_with_wrench=True,
-                            potion_inv=potion_inv)
+        result, carry_health = play_level(run_level5, screen, clock,
+                                          start_with_wrench=True,
+                                          potion_inv=potion_inv,
+                                          start_health=carry_health)
         if result == "menu":
             return
         if result != "level6":
@@ -109,9 +119,10 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 6:
         stop_music()
-        result = play_level(run_level6, screen, clock,
-                            start_with_wrench=True,
-                            potion_inv=potion_inv)
+        result, carry_health = play_level(run_level6, screen, clock,
+                                          start_with_wrench=True,
+                                          potion_inv=potion_inv,
+                                          start_health=carry_health)
         if result == "menu":
             return
 

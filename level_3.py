@@ -86,7 +86,7 @@ def run_death_screen(screen, clock):
 
 
 def run_level3(screen, clock, start_with_wrench=False,
-               potion_inv=None, **kwargs):
+               potion_inv=None, start_health=100, **kwargs):
 
     # Use passed potion inventory or create new one
     if potion_inv is None:
@@ -138,7 +138,7 @@ def run_level3(screen, clock, start_with_wrench=False,
     player_pos = pygame.Vector2(ROOM_A.x + 60, ROOM_A.centery)
     PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health = 100
+    health = start_health
     max_health = 100
 
     # FLASHLIGHT
@@ -485,12 +485,14 @@ def run_level3(screen, clock, start_with_wrench=False,
             player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
 
         # UPDATE WEEPING ANGELS
-        angel_b.update(player_pos, PLAYER_SIZE,
-                       angle, CONE_ANGLE, FLASHLIGHT_RADIUS,
-                       valid_rooms=all_rooms)
-        angel_d.update(player_pos, PLAYER_SIZE,
-                       angle, CONE_ANGLE, FLASHLIGHT_RADIUS,
-                       valid_rooms=all_rooms)
+        all_fixed = all(fb.fixed for fb in all_fuses)
+        if not all_fixed:
+            angel_b.update(player_pos, PLAYER_SIZE,
+                           angle, CONE_ANGLE, FLASHLIGHT_RADIUS,
+                           valid_rooms=all_rooms)
+            angel_d.update(player_pos, PLAYER_SIZE,
+                           angle, CONE_ANGLE, FLASHLIGHT_RADIUS,
+                           valid_rooms=all_rooms)
 
         any_angel_moving = not angel_b.frozen or not angel_d.frozen
         if any_angel_moving:
@@ -606,11 +608,11 @@ def run_level3(screen, clock, start_with_wrench=False,
                 ], black_bg=True)
                 if _angel_sfx: _angel_sfx.stop()
                 if _foot_sfx: _foot_sfx.stop()
-                return "level4"
+                return "level4", health
             else:
                 if _angel_sfx: _angel_sfx.stop()
                 if _foot_sfx: _foot_sfx.stop()
-                return "level4"
+                return "level4", health
 
         # DEATH CHECK
         if health <= 0:

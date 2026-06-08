@@ -79,7 +79,8 @@ def run_death_screen(screen, clock):
         clock.tick(60)
 
 
-def run_level1(screen, clock, potion_inv=None, **kwargs):
+def run_level1(screen, clock, start_with_wrench=False,
+               potion_inv=None, start_health=100, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -119,7 +120,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
     player_pos = pygame.Vector2(ROOM_LEFT + 80, ROOM_BOTTOM - 80)
     PLAYER_SIZE = 48
     PLAYER_SPEED = 4
-    health = 100
+    health = start_health
     max_health = 100
 
     player_sprite = AnimatedSprite(
@@ -324,7 +325,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
         # EXIT CHECK
         if door_open and player_rect_cur.colliderect(exit_door):
-            return "level2"
+            return "level2", health
 
         # DEATH CHECK
         if health <= 0:

@@ -1,6 +1,7 @@
 import pygame
 import sys
 import math
+import random
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import apply_glitch
@@ -11,6 +12,7 @@ from systems.potion import PotionInventory
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from systems.audio import play_music, stop_music, play_sfx
+from systems.chest import Chest
 from entities.shade import Shade
 from sprite_loader import AnimatedSprite
 from systems.particles import ParticleSystem
@@ -74,7 +76,7 @@ def fade_to_black(screen, clock):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_level4(screen, clock, start_with_wrench=False,
-               potion_inv=None, **kwargs):
+               potion_inv=None, start_health=100, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -129,7 +131,7 @@ def run_level4(screen, clock, start_with_wrench=False,
     player_pos   = pygame.Vector2(ROOM1.x + 40, ROOM1.centery - 24)
     PLAYER_SIZE  = 48
     PLAYER_SPEED = 4
-    health       = 100
+    health       = start_health
     max_health   = 100
 
     # ── FLASHLIGHT ───────────────────────────────────────────────────
@@ -149,6 +151,9 @@ def run_level4(screen, clock, start_with_wrench=False,
     node_2    = FuseBox(ROOM2.x + 30,  ROOM2.y + 30)        # far left of gauntlet
     node_3    = FuseBox(ROOM3.x + 40,     ROOM3.y + 60)     # deep in antechamber
     all_nodes = [node_1, node_2, node_3]
+
+    chest_potion = Chest(ROOM2.right - 100, ROOM2.centery - 24, "potion")
+    near_chest = None
 
     # ── SHADES ───────────────────────────────────────────────────────
     shades = [
@@ -236,6 +241,10 @@ def run_level4(screen, clock, start_with_wrench=False,
             if not nd.fixed and nd.is_near(pcx, pcy):
                 active_node = i
 
+        near_chest = None
+        if not chest_potion.opened and chest_potion.is_near(pcx, pcy):
+            near_chest = chest_potion
+
         # ── EVENTS ───────────────────────────────────────────────────
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -254,6 +263,16 @@ def run_level4(screen, clock, start_with_wrench=False,
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
                         all_nodes[active_node].fix()
+
+                elif event.key == pygame.K_e and near_chest is not None:
+                    item = near_chest.open()
+                    if item == "potion":
+                        if potion_inv.add():
+                            run_dialogue(screen, clock, [
+                                ("Eye drops.", (100, 180, 220)),
+                                ("Press Q to use.", (100, 180, 220)),
+                                ("Restores 40% health.", (100, 220, 100)),
+                            ])
 
                 if event.key == pygame.K_q:
                     old_health = health
@@ -344,12 +363,14 @@ def run_level4(screen, clock, start_with_wrench=False,
             player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
 
         # ── SHADES UPDATE + CONTACT ──────────────────────────────────
+        shade_contact = False
         for sh in shades:
             sh.update(player_pos, PLAYER_SIZE, angle,
                       CONE_ANGLE, FLASHLIGHT_RADIUS, valid_rooms=all_rooms)
             if sh.get_rect().colliderect(player_rect_cur):
                 health -= 0.84
                 glitch_intensity = min(100, glitch_intensity + 4)
+                shade_contact = True
 
         # ── WRENCH UPDATE ────────────────────────────────────────────
         for w in wrenches[:]:
@@ -423,7 +444,7 @@ def run_level4(screen, clock, start_with_wrench=False,
                     ("...I'm starting to wonder who's lying.",       WHITE),
                 ], black_bg=True)
                 stop_music()
-                return "level5"
+                return "level5", health
 
         # ─────────────────────────────────────────────────────────────
         # DRAW
@@ -452,6 +473,8 @@ def run_level4(screen, clock, start_with_wrench=False,
         # power nodes
         for nd in all_nodes:
             nd.draw(game_surf, font_small)
+
+        chest_potion.draw(game_surf, font_small)
 
         # exit lift
         door_color = (0, 200, 100) if door_open else (60, 80, 60)
@@ -505,12 +528,27 @@ def run_level4(screen, clock, start_with_wrench=False,
         # player
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))
 
+        if near_chest is not None:
+            p = font.render("PRESS E TO OPEN", True, (200, 180, 80))
+            game_surf.blit(p, (pcx - p.get_width() // 2, pcy - 70))
+
         potion_particles.update()
         potion_particles.draw(game_surf)
 
         # glitch
         if glitch_intensity > 0:
             apply_glitch(game_surf, glitch_intensity, WIDTH, HEIGHT)
+
+        if shade_contact:
+            bw_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            bw_surf.fill((0, 0, 0, 80))
+            game_surf.blit(bw_surf, (0, 0))
+            for _ in range(8):
+                y = random.randint(0, HEIGHT)
+                x = random.randint(0, WIDTH)
+                w = random.randint(50, 200)
+                pygame.draw.line(game_surf, (200, 200, 200),
+                                 (x, y), (x + w, y), 1)
 
         # prompts
         if active_node is not None:
