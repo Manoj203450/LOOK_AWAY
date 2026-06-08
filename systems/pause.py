@@ -15,7 +15,7 @@ def run_pause(screen, clock, game_surf):
         font       = pygame.font.SysFont("courier", 30)
         font_small = pygame.font.SysFont("courier", 16)
 
-    options  = ["CONTINUE", "RESTART", "MAIN MENU"]
+    options  = ["CONTINUE", "RESTART", "SETTINGS", "MAIN MENU"]
     selected = 0
 
     WHITE = (220, 220, 220)
@@ -23,6 +23,8 @@ def run_pause(screen, clock, game_surf):
     DIM   = (100, 100, 100)
 
     while True:
+        screen = pygame.display.get_surface()
+        WIDTH, HEIGHT = screen.get_size()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -39,6 +41,9 @@ def run_pause(screen, clock, game_surf):
                         return "continue"
                     elif options[selected] == "RESTART":
                         return "restart"
+                    elif options[selected] == "SETTINGS":
+                        from settings_screen import run_settings
+                        run_settings(screen, clock)
                     elif options[selected] == "MAIN MENU":
                         return "menu"
 
@@ -52,7 +57,7 @@ def run_pause(screen, clock, game_surf):
 
         # Pause panel
         PANEL_W = 400
-        PANEL_H = 300
+        PANEL_H = 370
         PANEL_X = WIDTH  // 2 - PANEL_W // 2
         PANEL_Y = HEIGHT // 2 - PANEL_H // 2
 

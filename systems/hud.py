@@ -37,6 +37,6 @@ def draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench):
             except Exception:
                 fps_font = pygame.font.SysFont("courier", 14)
             fps_surf = fps_font.render(f"{_fps_value:.0f} FPS", True, (160, 160, 160))
-            screen.blit(fps_surf, (W - fps_surf.get_width() - 12, 8))
+            screen.blit(fps_surf, (W - fps_surf.get_width() - 12, 4))
     except Exception:
         pass
