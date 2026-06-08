@@ -45,7 +45,7 @@ def run_game_from(level, gives_wrench, screen, clock):
     potion_inv = PotionInventory()
 
     if level <= 1:
-        play_music("assets/audio/audio_1.ogg",
+        play_music("assets/audio/lvl1.ogg",
                    loop=True, volume=0.3)
         result = play_level(run_level1, screen, clock,
                             potion_inv=potion_inv)
@@ -107,10 +107,10 @@ def run_game_from(level, gives_wrench, screen, clock):
             return
         level = 6
 
-    # level_6 is wired in directly for now so it can be tested standalone
     if level <= 6:
         stop_music()
         result = play_level(run_level6, screen, clock,
+                            start_with_wrench=True,
                             potion_inv=potion_inv)
         if result == "menu":
             return

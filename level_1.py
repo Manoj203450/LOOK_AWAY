@@ -4,13 +4,15 @@ import math
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import draw_moonlight, apply_glitch
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.pause import run_pause
 from systems.potion import PotionInventory
 from sprite_loader import AnimatedSprite
 from systems.particles import ParticleSystem
+from systems.audio import play_music, stop_music, play_sfx
+from systems.settings_manager import settings
 
 
 def is_point_in_polygon(point, polygon):
@@ -88,6 +90,11 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
     MOON_COLOR = (200, 220, 255, 80)
     PLAYER_COL = (180, 210, 255)
     WHITE = (255, 255, 255)
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
 
     try:
         font = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
@@ -95,6 +102,12 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
     except:
         font = pygame.font.SysFont("courier", 20)
         font_small = pygame.font.SysFont("courier", 14)
+
+    _box_sfx = None
+    try:
+        _box_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_box_push.ogg")
+    except Exception:
+        pass
 
     # ROOM BOUNDARIES
     ROOM_LEFT = 80
@@ -184,6 +197,10 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
                     result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
                         fuse_boxes[active_fuse].fix()
+                        play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
+                        if all(fb.fixed for fb in fuse_boxes):
+                            door_open = True
+                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.4)
                 if event.key == pygame.K_q:
                     old_health = health
                     health = potion_inv.use(health, max_health)
@@ -204,6 +221,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
                             size=2,
                             lifetime=25
                         )
+                    play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
 
         # MOVEMENT
         keys = pygame.key.get_pressed()
@@ -216,6 +234,13 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
         moving = (dx != 0 or dy != 0)
         player_sprite.update(moving)
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -229,6 +254,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
                         new_x, new_y, PLAYER_SIZE, player_pos)
 
         # Movable box collision
+        _box_moved = False
         temp_rect = pygame.Rect(new_x, new_y, PLAYER_SIZE, PLAYER_SIZE)
         if temp_rect.colliderect(mov_obj.rect):
             old_box_x = mov_obj.rect.x
@@ -239,10 +265,19 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
                 mov_obj.rect.y = old_box_y
                 new_x = player_pos.x
                 new_y = player_pos.y
-            elif (mov_obj.rect.x == old_box_x and
-                  mov_obj.rect.y == old_box_y):
+            elif (mov_obj.rect.x == old_box_x and mov_obj.rect.y == old_box_y):
                 new_x = player_pos.x
                 new_y = player_pos.y
+            else:
+                _box_moved = True
+
+        if _box_moved:
+            if _box_sfx and _box_sfx.get_num_channels() == 0:
+                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.play()
+        else:
+            if _box_sfx:
+                _box_sfx.stop()
 
         # Hard block player from movable box
         for mb in [mov_obj]:
@@ -277,6 +312,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
 
         if in_moonlight:
             glitch_intensity = min(100, glitch_intensity + 3)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 1)
@@ -335,9 +371,12 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         # Moonlight beam
         draw_moonlight(game_surf, moon_beam, MOON_COLOR)
 
-        # Flashlight
+        # Flashlight — dims proportionally to unfixed fuse boxes
+        _fixed   = sum(1 for fb in fuse_boxes if fb.fixed)
+        _total   = len(fuse_boxes)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # Player sprite
         player_sprite.draw(
@@ -364,6 +403,7 @@ def run_level1(screen, clock, potion_inv=None, **kwargs):
         screen.blit(game_surf, (0, 0))
 
         # HUD on screen directly
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health,
                  glitch_intensity, False)
         potion_inv.draw(screen, font_small)

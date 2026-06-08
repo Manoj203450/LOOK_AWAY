@@ -4,16 +4,18 @@ import math
 
 from systems.flashlight import draw_flashlight
 from systems.moonlight import apply_glitch
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
 from systems.potion import PotionInventory
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
-from systems.audio import play_music, stop_music
+from systems.audio import play_music, stop_music, play_sfx
 from entities.shade import Shade
 from sprite_loader import AnimatedSprite
 from systems.particles import ParticleSystem
+from systems.settings_manager import settings
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -493,9 +495,12 @@ def run_level4(screen, clock, start_with_wrench=False,
             pygame.draw.line(game_surf, (230, 240, 255),
                              (0, int(tide_top)), (WIDTH, int(tide_top)), 2)
             
-        # flashlight
+        # flashlight — dims proportionally to unfixed nodes
+        _fixed   = sum(1 for n in all_nodes if n.fixed)
+        _total   = len(all_nodes)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # player
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))
@@ -526,6 +531,7 @@ def run_level4(screen, clock, start_with_wrench=False,
         screen.fill((0, 0, 0))
         screen.blit(game_surf, (0, 0))
 
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health, glitch_intensity, has_wrench)
         potion_inv.draw(screen, font_small)
 

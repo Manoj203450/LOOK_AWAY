@@ -4,15 +4,20 @@ import math
 import random
 
 from systems.lever import Lever
-from systems.hud import draw_hud
+from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox
 from systems.dialogue import run_dialogue
 from systems.pause import run_pause
 from systems.potion import PotionInventory
-from systems.audio import stop_music
+from systems.audio import play_music, stop_music, play_sfx
 from entities.crewmate import Crewmate
 from sprite_loader import AnimatedSprite
 from systems.particles import ParticleSystem
+<<<<<<< HEAD
+from systems.settings_manager import settings
+=======
+from cinematic import run_cinematic_ending
+>>>>>>> fb499b17ff275b2549f49be78757b52c610fdd8f
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +170,10 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
     CANNON_PART_INTERVAL = 4
 
     stop_music()   # silence — let the tension breathe
+    try:
+        play_music("assets/audio/lvl6_uhh.ogg", loop=True, volume=0.4)
+    except Exception:
+        pass  # silence fallback
 
     try:
         font       = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
@@ -370,7 +379,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                         and player_stun_timer == 0:
                     choice = run_cannon_choice(screen, clock)
                     if choice == "fire":
-                        run_bad_ending(screen, clock)
+                        run_cinematic_ending(screen, clock)
                     else:
                         run_neutral_ending(screen, clock)
                     return "menu"
@@ -578,6 +587,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         screen.fill((0, 0, 0))
         screen.blit(game_surf, (0, 0))
 
+        set_fps(clock.get_fps())
         draw_hud(screen, font, health, max_health, 0, has_wrench)
         potion_inv.draw(screen, font_small)
 

@@ -62,7 +62,7 @@ def run_level_select(screen, clock):
                 "desc":         "The truth. The choice. The end.",
                 "unlocked":     True,
                 "level":        6,
-                "gives_wrench": False,
+                "gives_wrench": True,
             },
         ],
     ]

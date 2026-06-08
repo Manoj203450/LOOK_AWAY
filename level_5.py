@@ -11,13 +11,15 @@ from systems.fuse_puzzle    import FuseBox, run_fuse_puzzle
 from systems.potion         import PotionInventory
 from systems.dialogue       import run_dialogue
 from systems.pause          import run_pause
-from systems.audio          import play_music, stop_music
 from entities.shade         import Shade
 from entities.weeping_angel import WeepingAngel
 from entities.enemy         import Enemy
 from entities.crewmate      import Crewmate
 from sprite_loader          import AnimatedSprite
 from systems.particles import ParticleSystem
+from systems.audio import play_music, stop_music, play_sfx
+from systems.settings_manager import settings
+
 
 
 # Helpers
@@ -88,12 +90,9 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Lvl music
     stop_music()
     try:
-        play_music("assets/audio/lvl5.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/chinese.ogg", loop=True, volume=0.4)
     except Exception:
-        try:
-            play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
-        except Exception:
-            pass
+        pass
 
     # Fonts
     try:
@@ -640,9 +639,12 @@ def run_level5(screen, clock, start_with_wrench=True,
             pygame.draw.line(game_surf, (230, 240, 255),
                              (0, int(tide_top)), (WIDTH, int(tide_top)), 2)
 
-        # Flashlight darkness overlay
+        # Flashlight darkness overlay — dims proportionally to unfixed nodes
+        _fixed   = sum(1 for n in all_nodes if n.fixed)
+        _total   = len(all_nodes)
+        _ambient = int(240 - (_fixed / _total) * 180) if _total > 0 else 240
         draw_flashlight(game_surf, darkness, pcx, pcy, angle,
-                        CONE_ANGLE, FLASHLIGHT_RADIUS)
+                        CONE_ANGLE, FLASHLIGHT_RADIUS, ambient_alpha=_ambient)
 
         # Player drawn AFTER flashlight (always visible)
         player_sprites.draw(game_surf, int(player_pos.x), int(player_pos.y))
