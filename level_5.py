@@ -197,10 +197,10 @@ def run_level5(screen, clock, start_with_wrench=True,
     shade_c = Shade(ROOM_C.x + 350, ROOM_C.centery - 20, speed=1.8)
     enemy_c = Enemy(ROOM_C.centerx,  ROOM_C.centery)
     enemy_c.patrol_points = [
-        pygame.Vector2(ROOM_C.x + 80,     ROOM_C.y + 40),
-        pygame.Vector2(ROOM_C.centerx,    ROOM_C.y + 40),
-        pygame.Vector2(ROOM_C.centerx,    ROOM_C.bottom - 40),
-        pygame.Vector2(ROOM_C.x + 80,     ROOM_C.bottom - 40),
+        pygame.Vector2(ROOM_C.x + 80,   ROOM_C.y + 40),
+        pygame.Vector2(ROOM_C.x + 400,  ROOM_C.y + 40),
+        pygame.Vector2(ROOM_C.x + 400,  ROOM_C.bottom - 40),
+        pygame.Vector2(ROOM_C.x + 80,   ROOM_C.bottom - 40),
     ]
 
     # Crewmate, spawns once all 4 nodes are fixed (room C)
@@ -219,7 +219,7 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Moonlight flood
     tide_active = False
     tide_top    = float(ROOM_C.bottom) # starts at room C floor, rises up
-    TIDE_RISE   = 0.7
+    TIDE_RISE   = 0.67
     TIDE_MIN_Y  = float(ROOM_A.y)
 
     # Event flags
@@ -310,7 +310,7 @@ def run_level5(screen, clock, start_with_wrench=True,
                             "pos":      pygame.Vector2(pcx, pcy),
                             "vel":      pygame.Vector2(dxw / dist * WRENCH_SPEED,
                                                        dyw / dist * WRENCH_SPEED),
-                            "life":     30,
+                            "life":     60,
                             "rotation": 0,
                         })
 
@@ -416,9 +416,10 @@ def run_level5(screen, clock, start_with_wrench=True,
             wr = pygame.Rect(w["pos"].x - 5, w["pos"].y - 5, 10, 10)
 
             struck     = False
-            all_stun_targets = [enemy_a, shade_b, shade_c, enemy_c]
+            all_stun_targets = []
             if crewmate_active and crewmate is not None:
                 all_stun_targets.append(crewmate)
+            all_stun_targets += [enemy_a, shade_b, shade_c, enemy_c]
 
             for ent in all_stun_targets:
                 if ent.get_rect().colliderect(wr):
@@ -480,7 +481,7 @@ def run_level5(screen, clock, start_with_wrench=True,
             # Spawn crewmate at left side of Room C
             if crewmate is None:
                 try:
-                    crewmate        = Crewmate(ROOM_C.x + 80,
+                    crewmate        = Crewmate(ROOM_C.right - 105,
                                                ROOM_C.centery - 24)
                     crewmate_active = True
                 except Exception:
