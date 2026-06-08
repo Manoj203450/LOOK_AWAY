@@ -51,11 +51,11 @@ def run_level_select(screen, clock):
                 "gives_wrench": True,
             },
             {
-                "name":         "LEVEL 5 — COMING SOON",
-                "desc":         "This level is not yet available.",
-                "unlocked":     False,
+                "name":         "LEVEL 5 — THE THRESHOLD",
+                "desc":         "All rules break here. Look away.",
+                "unlocked":     True,
                 "level":        5,
-                "gives_wrench": False,
+                "gives_wrench": True,
             },
             {
                 "name":         "LEVEL 6 — THE CANNON",
