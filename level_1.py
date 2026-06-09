@@ -190,8 +190,10 @@ def run_level1(screen, clock, start_with_wrench=False,
                     if pause_result == "continue":
                         pass
                     elif pause_result == "restart":
+                        if _foot_sfx:  _foot_sfx.stop()
                         return None
                     elif pause_result == "menu":
+                        if _foot_sfx:  _foot_sfx.stop()
                         return "menu"
 
                 if event.key == pygame.K_e and active_fuse is not None:
@@ -201,7 +203,7 @@ def run_level1(screen, clock, start_with_wrench=False,
                         play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
                         if all(fb.fixed for fb in fuse_boxes):
                             door_open = True
-                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.4)
+                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.5)
                 if event.key == pygame.K_q:
                     old_health = health
                     health = potion_inv.use(health, max_health)
@@ -237,7 +239,7 @@ def run_level1(screen, clock, start_with_wrench=False,
         player_sprite.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -274,7 +276,7 @@ def run_level1(screen, clock, start_with_wrench=False,
 
         if _box_moved:
             if _box_sfx and _box_sfx.get_num_channels() == 0:
-                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.set_volume(0.75 * settings.get("sfx_volume", 1.0))
                 _box_sfx.play()
         else:
             if _box_sfx:
@@ -325,10 +327,12 @@ def run_level1(screen, clock, start_with_wrench=False,
 
         # EXIT CHECK
         if door_open and player_rect_cur.colliderect(exit_door):
+            if _foot_sfx:  _foot_sfx.stop()
             return "level2", health
 
         # DEATH CHECK
         if health <= 0:
+            if _foot_sfx:  _foot_sfx.stop()
             run_death_screen(screen, clock)
             return
 
@@ -397,6 +401,7 @@ def run_level1(screen, clock, start_with_wrench=False,
         if near_fuse:
             prompt = font.render(
                 "PRESS E TO FIX", True, (200, 200, 100))
+            _foot_sfx.stop()
             game_surf.blit(prompt,
                            (pcx - prompt.get_width()//2, pcy - 50))
 

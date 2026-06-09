@@ -90,7 +90,7 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Lvl music
     stop_music()
     try:
-        play_music("assets/audio/chinese.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/lvl5.ogg", loop=True, volume=0.4)
     except Exception:
         pass
 
@@ -232,6 +232,39 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Draw surface
     game_surf = pygame.Surface((WIDTH, HEIGHT))
 
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
+
+    _box_sfx = None
+    try:
+        _box_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_box_push.ogg")
+    except Exception:
+        pass
+
+    _shade_sfx = None
+    try:
+        _shade_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_shade_wake.ogg")
+    except Exception:
+        pass
+
+    _angel_sfx = None
+    try:
+        _angel_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_angel_move.ogg")
+    except Exception:
+        pass
+
+    _flood_sfx = None
+    try:
+        _flood_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_flood_rise.ogg")
+    except Exception:
+        pass
+
+    _prev_shade_active = [False, False]  # shade_b, shade_c
+    _prev_angel_frozen = True
+
     # Main loop
     running = True
     while running:
@@ -288,19 +321,30 @@ def run_level5(screen, clock, start_with_wrench=True,
                 if event.key == pygame.K_ESCAPE:
                     pause_result = run_pause(screen, clock, game_surf)
                     if pause_result == "restart":
+                        if _foot_sfx:  _foot_sfx.stop()
+                        if _shade_sfx: _shade_sfx.stop()
+                        if _angel_sfx: _angel_sfx.stop()
+                        if _flood_sfx: _flood_sfx.stop()
                         return None
                     elif pause_result == "menu":
+                        if _foot_sfx:  _foot_sfx.stop()
+                        if _shade_sfx: _shade_sfx.stop()
+                        if _angel_sfx: _angel_sfx.stop()
+                        if _flood_sfx: _flood_sfx.stop()
                         return "menu"
 
                 if event.key == pygame.K_e and active_node is not None:
                     result = run_fuse_puzzle(screen, clock)
+                    _foot_sfx.stop()
                     if result == "solved":
                         all_nodes[active_node].fix()
+                        play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
 
                 if event.key == pygame.K_q:
                     old_health = health
                     health = potion_inv.use(health, max_health)
                     if health > old_health:
+                        play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
                         potion_particles.emit(
                             pcx, pcy,
                             colour=(100, 220, 100),
@@ -325,6 +369,7 @@ def run_level5(screen, clock, start_with_wrench=True,
                     dist = math.hypot(dxw, dyw)
                     if dist > 0:
                         has_wrench = False
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.8)
                         wrenches.append({
                             "pos":      pygame.Vector2(pcx, pcy),
                             "vel":      pygame.Vector2(dxw / dist * WRENCH_SPEED,
@@ -346,6 +391,13 @@ def run_level5(screen, clock, start_with_wrench=True,
 
         moving = (dx != 0 or dy != 0)
         player_sprites.update(moving)
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         test_x = pygame.Rect(player_pos.x + dx, player_pos.y,
                              PLAYER_SIZE, PLAYER_SIZE)
@@ -366,6 +418,7 @@ def run_level5(screen, clock, start_with_wrench=True,
             player_pos.y = ny
 
         # Push movable boxes (Room C only)
+        _box_moved = False
         player_rect = pygame.Rect(player_pos.x, player_pos.y,
                                   PLAYER_SIZE, PLAYER_SIZE)
         for mb in mov_boxes:
@@ -374,10 +427,20 @@ def run_level5(screen, clock, start_with_wrench=True,
                 mb.push(dx, dy, player_rect, room_c_bounds,
                         valid_rooms=all_rooms)
                 if (mb.rect.x, mb.rect.y) == old:
-                    if dx > 0: player_pos.x = mb.rect.left  - PLAYER_SIZE
+                    if dx > 0: player_pos.x = mb.rect.left - PLAYER_SIZE
                     if dx < 0: player_pos.x = mb.rect.right
-                    if dy > 0: player_pos.y = mb.rect.top   - PLAYER_SIZE
+                    if dy > 0: player_pos.y = mb.rect.top - PLAYER_SIZE
                     if dy < 0: player_pos.y = mb.rect.bottom
+                else:
+                    _box_moved = True
+
+        if _box_moved:
+            if _box_sfx and _box_sfx.get_num_channels() == 0:
+                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.play()
+        else:
+            if _box_sfx:
+                _box_sfx.stop()
 
         # Recalculate after movement
         pcx = player_pos.x + PLAYER_SIZE // 2
@@ -395,6 +458,31 @@ def run_level5(screen, clock, start_with_wrench=True,
                        CONE_ANGLE, FLASHLIGHT_RADIUS, valid_rooms=all_rooms)
         enemy_c.update(player_pos, PLAYER_SIZE, valid_rooms=all_rooms)
 
+        # Angel sound, loop while moving, stop when frozen
+        if not angel_b.frozen:
+            if _angel_sfx and _angel_sfx.get_num_channels() == 0:
+                _angel_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
+                _angel_sfx.play(-1)
+        else:
+            if _angel_sfx:
+                _angel_sfx.stop()
+
+        # Shade sleep one-shot
+        for i, sh in enumerate([shade_b, shade_c]):
+            if not sh.active and _prev_shade_active[i] and sh.stun_timer == 0:
+                play_sfx("assets/audio/sfx/sfx_shade_sleep.ogg", volume=0.5)
+            _prev_shade_active[i] = sh.active
+
+        # Shade wake, loop while any shade is active, stop when all frozen
+        any_shade_active = any(s.active for s in [shade_b, shade_c])
+        if any_shade_active:
+            if _shade_sfx and _shade_sfx.get_num_channels() == 0:
+                _shade_sfx.set_volume(0.8 * settings.get("sfx_volume", 1.0))
+                _shade_sfx.play(-1)
+        else:
+            if _shade_sfx:
+                _shade_sfx.stop()
+
         if crewmate_active and crewmate is not None:
             crewmate.update(player_pos, PLAYER_SIZE,
                             [],
@@ -405,6 +493,7 @@ def run_level5(screen, clock, start_with_wrench=True,
         for ent in [enemy_a, enemy_c]:
             if (getattr(ent, "state", "") != "stunned"
                     and player_rect.colliderect(ent.get_rect())):
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
                 health          -= 0.6
                 glitch_intensity = min(100, glitch_intensity + 3)
 
@@ -416,6 +505,7 @@ def run_level5(screen, clock, start_with_wrench=True,
         for shade in [shade_b, shade_c]:
             if (shade.stun_timer == 0
                     and player_rect.colliderect(shade.get_rect())):
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
                 health          -= 0.84
                 glitch_intensity = min(100, glitch_intensity + 4)
 
@@ -424,7 +514,6 @@ def run_level5(screen, clock, start_with_wrench=True,
             if crewmate.try_stun_player(player_pos, PLAYER_SIZE,
                                         has_fixed_levers=False):
                 player_stun      = 120
-                health          -= 8
                 glitch_intensity = min(100, glitch_intensity + 20)
 
         # WRENCH UPDATE
@@ -460,14 +549,17 @@ def run_level5(screen, clock, start_with_wrench=True,
                             ("(His eyes are clear. He's not corrupted.)",     WHITE),
                             ("(He's just afraid.)",                           WHITE),
                         ], black_bg=True)
+                        play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.6)
                         door_open = True
 
+                    play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.9)
                     struck = True
                     break
 
             # Stun weeping angel
             if not struck and angel_b.get_rect().colliderect(wr):
                 angel_b.stun() if hasattr(angel_b, "stun") else None
+                play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.9)
                 struck = True
 
             in_bounds = any(r.collidepoint(w["pos"].x, w["pos"].y)
@@ -490,6 +582,9 @@ def run_level5(screen, clock, start_with_wrench=True,
         # When all 4 nodes are fixed, start flood + spawn crewmate
         if all_fixed and not tide_active:
             tide_active = True
+            if _flood_sfx:
+                _flood_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _flood_sfx.play(-1)
 
         if tide_active and not tide_warned:
             tide_warned = True
@@ -521,12 +616,14 @@ def run_level5(screen, clock, start_with_wrench=True,
         # MOONLIGHT CIRCLE DAMAGE
         for (cx, cy, r) in moon_circles:
             if math.hypot(pcx - cx, pcy - cy) < r:
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
                 health          -= 0.3
                 glitch_intensity = min(100, glitch_intensity + 2)
 
         # FLOOD DAMAGE
         taking_flood = tide_active and (pcy >= tide_top)
         if taking_flood:
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health          -= 0.3
             glitch_intensity = min(100, glitch_intensity + 3)
         else:
@@ -536,6 +633,10 @@ def run_level5(screen, clock, start_with_wrench=True,
 
         # DEATH CHECK
         if health <= 0:
+            if _foot_sfx:  _foot_sfx.stop()
+            if _shade_sfx: _shade_sfx.stop()
+            if _angel_sfx: _angel_sfx.stop()
+            if _flood_sfx: _flood_sfx.stop()
             run_death_screen(screen, clock)
             return None
 
@@ -554,6 +655,10 @@ def run_level5(screen, clock, start_with_wrench=True,
                     ("...what have I done?",                     WHITE),
                 ], black_bg=True)
                 stop_music()
+                if _foot_sfx:  _foot_sfx.stop()
+                if _shade_sfx: _shade_sfx.stop()
+                if _angel_sfx: _angel_sfx.stop()
+                if _flood_sfx: _flood_sfx.stop()
                 return "level6", health
 
         # Glimpse timer decay

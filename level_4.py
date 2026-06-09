@@ -195,6 +195,32 @@ def run_level4(screen, clock, start_with_wrench=False,
     # ── SURFACE ──────────────────────────────────────────────────────
     game_surf = pygame.Surface((WIDTH, HEIGHT))
 
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
+
+    _box_sfx = None
+    try:
+        _box_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_box_push.ogg")
+    except Exception:
+        pass
+
+    _shade_sfx = None
+    try:
+        _shade_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_shade_wake.ogg")
+    except Exception:
+        pass
+
+    _flood_sfx = None
+    try:
+        _flood_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_flood_rise.ogg")
+    except Exception:
+        pass
+
+    _prev_shade_active = [False] * len(shades)
+
     running = True
     while running:
 
@@ -255,14 +281,22 @@ def run_level4(screen, clock, start_with_wrench=False,
                 if event.key == pygame.K_ESCAPE:
                     pause_result = run_pause(screen, clock, game_surf)
                     if pause_result == "restart":
+                        if _foot_sfx:  _foot_sfx.stop()
+                        if _shade_sfx: _shade_sfx.stop()
+                        if _flood_sfx: _flood_sfx.stop()
                         return None
                     elif pause_result == "menu":
+                        if _foot_sfx:  _foot_sfx.stop()
+                        if _shade_sfx: _shade_sfx.stop()
+                        if _flood_sfx: _flood_sfx.stop()
                         return "menu"
 
                 if event.key == pygame.K_e and active_node is not None:
                     result = run_fuse_puzzle(screen, clock)
+                    _foot_sfx.stop()
                     if result == "solved":
                         all_nodes[active_node].fix()
+                        play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
 
                 elif event.key == pygame.K_e and near_chest is not None:
                     item = near_chest.open()
@@ -278,6 +312,7 @@ def run_level4(screen, clock, start_with_wrench=False,
                     old_health = health
                     health = potion_inv.use(health, max_health)
                     if health > old_health:
+                        play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
                         potion_particles.emit(
                             pcx, pcy,
                             colour=(100, 220, 100),
@@ -302,6 +337,7 @@ def run_level4(screen, clock, start_with_wrench=False,
                     dist = math.hypot(dxw, dyw)
                     if dist > 0:
                         has_wrench = False
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.8)
                         wrenches.append({
                             "pos": pygame.Vector2(pcx, pcy),
                             "vel": pygame.Vector2(dxw/dist * WRENCH_SPEED,
@@ -320,6 +356,14 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         moving = (dx != 0 or dy != 0)
         player_sprites.update(moving)
+
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         # try X
         test = pygame.Rect(player_pos.x + dx, player_pos.y,
@@ -342,19 +386,30 @@ def run_level4(screen, clock, start_with_wrench=False,
             player_pos.y = ny
 
         # push movable boxes
-        player_rect_cur = pygame.Rect(
-            player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
-        for mb in mov_boxes:
-            if player_rect_cur.colliderect(mb.rect):
-                old = (mb.rect.x, mb.rect.y)
-                mb.push(dx, dy, player_rect_cur, room_bounds,
-                        valid_rooms=all_rooms)
-                # hard stop if box didn't move (wall behind it)
-                if (mb.rect.x, mb.rect.y) == old:
-                    if dx > 0: player_pos.x = mb.rect.left - PLAYER_SIZE
-                    if dx < 0: player_pos.x = mb.rect.right
-                    if dy > 0: player_pos.y = mb.rect.top - PLAYER_SIZE
-                    if dy < 0: player_pos.y = mb.rect.bottom
+            # push movable boxes
+            _box_moved = False
+            player_rect_cur = pygame.Rect(
+                player_pos.x, player_pos.y, PLAYER_SIZE, PLAYER_SIZE)
+            for mb in mov_boxes:
+                if player_rect_cur.colliderect(mb.rect):
+                    old = (mb.rect.x, mb.rect.y)
+                    mb.push(dx, dy, player_rect_cur, room_bounds,
+                            valid_rooms=all_rooms)
+                    if (mb.rect.x, mb.rect.y) == old:
+                        if dx > 0: player_pos.x = mb.rect.left - PLAYER_SIZE
+                        if dx < 0: player_pos.x = mb.rect.right
+                        if dy > 0: player_pos.y = mb.rect.top - PLAYER_SIZE
+                        if dy < 0: player_pos.y = mb.rect.bottom
+                    else:
+                        _box_moved = True
+
+            if _box_moved:
+                if _box_sfx and _box_sfx.get_num_channels() == 0:
+                    _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                    _box_sfx.play()
+            else:
+                if _box_sfx:
+                    _box_sfx.stop()
 
         # recalc centre
         pcx = player_pos.x + PLAYER_SIZE // 2
@@ -364,13 +419,29 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         # ── SHADES UPDATE + CONTACT ──────────────────────────────────
         shade_contact = False
-        for sh in shades:
+        for i, sh in enumerate(shades):
             sh.update(player_pos, PLAYER_SIZE, angle,
                       CONE_ANGLE, FLASHLIGHT_RADIUS, valid_rooms=all_rooms)
             if sh.get_rect().colliderect(player_rect_cur):
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
                 health -= 0.84
                 glitch_intensity = min(100, glitch_intensity + 4)
                 shade_contact = True
+
+        # sleep one-shot (fine as play_sfx, short sound)
+        for i, sh in enumerate(shades):
+            if not sh.active and _prev_shade_active[i] and sh.stun_timer == 0:
+                play_sfx("assets/audio/sfx/sfx_shade_sleep.ogg", volume=0.5)
+            _prev_shade_active[i] = sh.active
+
+        any_shade_active = any(sh.active for sh in shades)
+        if any_shade_active:
+            if _shade_sfx and _shade_sfx.get_num_channels() == 0:
+                _shade_sfx.set_volume(0.8 * settings.get("sfx_volume", 1.0))
+                _shade_sfx.play(-1)
+        else:
+            if _shade_sfx:
+                _shade_sfx.stop()
 
         # ── WRENCH UPDATE ────────────────────────────────────────────
         for w in wrenches[:]:
@@ -384,6 +455,7 @@ def run_level4(screen, clock, start_with_wrench=False,
             for sh in shades:
                 if sh.get_rect().colliderect(wr):
                     sh.stun(hit_x=w["pos"].x, hit_y=w["pos"].y)
+                    play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.9)
                     struck = True
             in_bounds = any(r.collidepoint(w["pos"].x, w["pos"].y)
                             for r in all_rooms)
@@ -402,8 +474,12 @@ def run_level4(screen, clock, start_with_wrench=False,
         if all(nd.fixed for nd in all_nodes):
             if not door_open:
                 door_open = True
+                play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.6)
             if not tide_active:
                 tide_active = True
+                if _flood_sfx:
+                    _flood_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                    _flood_sfx.play(-1)
 
         if tide_active:
             tide_top = max(TIDE_MIN_Y, tide_top - TIDE_RISE)
@@ -419,6 +495,7 @@ def run_level4(screen, clock, start_with_wrench=False,
         taking_damage = tide_active and (pcy >= tide_top)
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 4)
@@ -426,6 +503,9 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         # ── DEATH ────────────────────────────────────────────────────
         if health <= 0:
+            if _foot_sfx:  _foot_sfx.stop()
+            if _shade_sfx: _shade_sfx.stop()
+            if _flood_sfx: _flood_sfx.stop()
             run_death_screen(screen, clock)
             return None
 
@@ -444,6 +524,9 @@ def run_level4(screen, clock, start_with_wrench=False,
                     ("...I'm starting to wonder who's lying.",       WHITE),
                 ], black_bg=True)
                 stop_music()
+                if _foot_sfx:  _foot_sfx.stop()
+                if _shade_sfx: _shade_sfx.stop()
+                if _flood_sfx: _flood_sfx.stop()
                 return "level5", health
 
         # ─────────────────────────────────────────────────────────────
@@ -530,6 +613,7 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         if near_chest is not None:
             p = font.render("PRESS E TO OPEN", True, (200, 180, 80))
+            _foot_sfx.stop()
             game_surf.blit(p, (pcx - p.get_width() // 2, pcy - 70))
 
         potion_particles.update()

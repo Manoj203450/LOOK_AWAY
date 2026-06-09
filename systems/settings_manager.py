@@ -7,12 +7,12 @@
 
 settings = {
     # DISPLAY
-    "fullscreen":       False,
+    "fullscreen":       True,
     "show_fps":         False,
 
     # AUDIO
-    "music_volume":     1.0,    # 0.0 = mute, 1.0 = 100%
-    "sfx_volume":       0.75,   # placeholder — wired up when SFX are added
+    "music_volume":     0.25,    # 0.0 = mute, 1.0 = 100%
+    "sfx_volume":       1.0,   # placeholder — wired up when SFX are added
 
     # GAMEPLAY
     "screen_shake":     True,

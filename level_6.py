@@ -170,7 +170,7 @@ def run_level6(screen, clock, start_with_wrench=True,
 
     stop_music()   # silence — let the tension breathe
     try:
-        play_music("assets/audio/lvl6_uhh.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/lvl6.ogg", loop=True, volume=0.4)
     except Exception:
         pass  # silence fallback
 
@@ -283,6 +283,20 @@ def run_level6(screen, clock, start_with_wrench=True,
         ("I can't let you do this.",                       (220, 220, 220)),
     ], black_bg=True)
 
+    _foot_sfx = None
+    try:
+        _foot_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_footstep.ogg")
+    except Exception:
+        pass
+
+    _lever_sfx = None
+    try:
+        _lever_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_lever_hold.ogg")
+    except Exception:
+        pass
+
+    _prev_lever_fixed = [lv.fixed for lv in levers]
+
     # ── MAIN LOOP ─────────────────────────────────────────────────────
     running = True
     while running:
@@ -348,14 +362,19 @@ def run_level6(screen, clock, start_with_wrench=True,
                     if result == "continue":
                         pass
                     elif result == "restart":
+                        if _lever_sfx: _lever_sfx.stop()
+                        if _foot_sfx: _foot_sfx.stop()
                         return None
                     elif result == "menu":
+                        if _lever_sfx: _lever_sfx.stop()
+                        if _foot_sfx: _foot_sfx.stop()
                         return "menu"
 
                 if event.key == pygame.K_q:
                     old_health = health
                     health = potion_inv.use(health, max_health)
                     if health > old_health:
+                        play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
                         potion_particles.emit(
                             pcx, pcy,
                             colour=(100, 220, 100),
@@ -377,10 +396,19 @@ def run_level6(screen, clock, start_with_wrench=True,
                 if event.key == pygame.K_e and near_cannon \
                         and player_stun_timer == 0:
                     choice = run_cannon_choice(screen, clock)
+                    if _foot_sfx:  _foot_sfx.stop()
                     if choice == "fire":
+                        import threading
+                        def _fire_sound():
+                            pygame.time.wait(4900)
+                            play_sfx("assets/audio/sfx/sfx_cannon_fire.ogg", volume=0.99)
+
+                        threading.Thread(target=_fire_sound, daemon=True).start()
                         run_cinematic_ending(screen, clock)
                     else:
                         run_neutral_ending(screen, clock)
+                    pygame.mixer.stop()
+                    if _foot_sfx: _foot_sfx.stop()
                     return "menu"
 
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -390,6 +418,7 @@ def run_level6(screen, clock, start_with_wrench=True,
                     dist = math.hypot(dx_w, dy_w)
                     if dist > 0:
                         has_wrench = False
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.8)
                         wrenches.append({
                             "pos":      pygame.Vector2(pcx, pcy),
                             "vel":      pygame.Vector2(
@@ -414,6 +443,14 @@ def run_level6(screen, clock, start_with_wrench=True,
         for lv in levers:
             lv.update(holding_lever and lv is near_lever)
 
+        if holding_lever:
+            if _lever_sfx and _lever_sfx.get_num_channels() == 0:
+                _lever_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
+                _lever_sfx.play(-1)
+        else:
+            if _lever_sfx:
+                _lever_sfx.stop()
+
         # ── player movement ───────────────────────────────────────────
         dx = dy = 0
         if player_stun_timer == 0:
@@ -424,6 +461,13 @@ def run_level6(screen, clock, start_with_wrench=True,
 
         moving = dx != 0 or dy != 0
         player_sprite.update(moving)
+        if moving:
+            if _foot_sfx and _foot_sfx.get_num_channels() == 0:
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.play()
+        else:
+            if _foot_sfx:
+                _foot_sfx.stop()
 
         new_x = player_pos.x + dx
         new_y = player_pos.y + dy
@@ -450,10 +494,16 @@ def run_level6(screen, clock, start_with_wrench=True,
             valid_rooms=valid_room,
             obstacle_rects=obstacle_rects
         )
+        for i, lv in enumerate(levers):
+            if _prev_lever_fixed[i] and not lv.fixed:
+                play_sfx("assets/audio/sfx/sfx_lever_off.ogg", volume=0.99)
+            _prev_lever_fixed[i] = lv.fixed
         has_fixed = any(lv.fixed for lv in levers)
         if crewmate.try_stun_player(player_pos, PLAYER_SIZE,
                                     has_fixed_levers=has_fixed):
             player_stun_timer = 120
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.1)
+
 
         # ── wrenches ─────────────────────────────────────────────────
         for w in wrenches[:]:
@@ -465,6 +515,7 @@ def run_level6(screen, clock, start_with_wrench=True,
                          ROOM_TOP  <= w["pos"].y <= ROOM_BOTTOM)
             if wr.colliderect(crewmate.get_rect()):
                 crewmate.stun(180, hit_x=w["pos"].x, hit_y=w["pos"].y)
+                play_sfx("assets/audio/sfx/sfx_crewmate_stun.ogg", volume=0.9)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
 

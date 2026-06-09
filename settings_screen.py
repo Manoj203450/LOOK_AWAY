@@ -7,6 +7,12 @@
 import pygame
 import sys
 from systems.settings_manager import settings
+try:
+    import cv2
+    import numpy
+    _CV2 = True
+except ImportError:
+    _CV2 = False
 
 WHITE = (220, 220, 220)
 RED   = (200,  40,  40)
@@ -32,14 +38,17 @@ def _load_fonts():
         }
 
 
-def _bg(screen):
-    """Draw the background — menu_bg with dark overlay, same as menu.py."""
+def _bg(screen, video_surface=None):
+    """Draw the background — video if available, else static image fallback."""
     W, H = screen.get_size()
-    try:
-        bg = pygame.image.load("assets/images/menu_bg.png").convert()
-        screen.blit(pygame.transform.scale(bg, (W, H)), (0, 0))
-    except Exception:
-        screen.fill(DARK)
+    if video_surface is not None:
+        screen.blit(video_surface, (0, 0))
+    else:
+        try:
+            bg = pygame.image.load("assets/images/menu_bg.png").convert()
+            screen.blit(pygame.transform.scale(bg, (W, H)), (0, 0))
+        except Exception:
+            screen.fill(DARK)
     ov = pygame.Surface((W, H), pygame.SRCALPHA)
     ov.fill((0, 0, 0, 155))
     screen.blit(ov, (0, 0))
@@ -57,6 +66,17 @@ def _recreate_display():
 
 def run_controls(screen, clock):
     fonts = _load_fonts()
+    cap = None
+    video_surface = None
+    last_frame_time = 0
+    frame_delay = 33
+    if _CV2:
+        try:
+            cap = cv2.VideoCapture("assets/menu_video.mp4")
+            _fps = cap.get(cv2.CAP_PROP_FPS) or 30
+            frame_delay = int(1000 / _fps)
+        except Exception:
+            cap = None
 
     BINDINGS = [
         ("WASD  /  ARROWS",   "Move"),
@@ -68,6 +88,19 @@ def run_controls(screen, clock):
     ]
 
     while True:
+        now = pygame.time.get_ticks()
+        if cap is not None and now - last_frame_time >= frame_delay:
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                _sw, _sh = screen.get_size()
+                frame = cv2.resize(frame, (_sw, _sh))
+                video_surface = pygame.surfarray.make_surface(
+                    numpy.rot90(numpy.fliplr(frame)))
+            last_frame_time = now
         screen = pygame.display.get_surface()
         W, H   = screen.get_size()
 
@@ -75,9 +108,10 @@ def run_controls(screen, clock):
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN:
-                return   # any key goes back
+                if cap is not None: cap.release()
+                return
 
-        _bg(screen)
+        _bg(screen, video_surface)
 
         # Panel
         PW, PH = 700, 380
@@ -172,6 +206,17 @@ def run_settings(screen, clock):
 
     # sel_pos = index into _SELECTABLE list
     sel_pos   = 0
+    cap = None
+    video_surface = None
+    last_frame_time = 0
+    frame_delay = 33
+    if _CV2:
+        try:
+            cap = cv2.VideoCapture("assets/menu_video.mp4")
+            _fps = cap.get(cv2.CAP_PROP_FPS) or 30
+            frame_delay = int(1000 / _fps)
+        except Exception:
+            cap = None
     n_sel     = len(_SELECTABLE)
 
     # Layout constants
@@ -184,6 +229,19 @@ def run_settings(screen, clock):
     START_Y   = 130      # y of the first item
 
     while True:
+        now = pygame.time.get_ticks()
+        if cap is not None and now - last_frame_time >= frame_delay:
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                _sw, _sh = screen.get_size()
+                frame = cv2.resize(frame, (_sw, _sh))
+                video_surface = pygame.surfarray.make_surface(
+                    numpy.rot90(numpy.fliplr(frame)))
+            last_frame_time = now
         screen = pygame.display.get_surface()
         W, H   = screen.get_size()
 
@@ -193,6 +251,7 @@ def run_settings(screen, clock):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    if cap is not None: cap.release()
                     return
 
                 if event.key in (pygame.K_UP, pygame.K_w):
@@ -220,7 +279,7 @@ def run_settings(screen, clock):
                         run_controls(screen, clock)
 
         # ── DRAW ──────────────────────────────────────────────────────────
-        _bg(screen)
+        _bg(screen, video_surface)
 
         # Title + rule
         t = fonts["title"].render("SETTINGS", True, WHITE)

@@ -41,8 +41,10 @@ def run_intro(screen, clock):
                         sys.exit()
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
+                            if _click_sfx: _click_sfx.stop()
                             return False  # skip entire intro
                         if event.key == pygame.K_SPACE:
+                            if _click_sfx: _click_sfx.stop()
                             # skip to full line instantly
                             displayed = text
                             screen.fill(BLACK)
@@ -56,6 +58,8 @@ def run_intro(screen, clock):
                             return True
 
                 displayed += char
+                if _click_sfx and _click_sfx.get_num_channels() == 0:
+                    _click_sfx.play()
                 screen.fill(BLACK)
                 render = font.render(displayed, True, color)
                 screen.blit(render, (x, y))
@@ -66,6 +70,7 @@ def run_intro(screen, clock):
                 pygame.display.flip()
                 clock.tick(speed)  # lower = faster typing
 
+            if _click_sfx: _click_sfx.stop()
             return True
 
         fade_surf = pygame.Surface(screen.get_size())
@@ -76,6 +81,14 @@ def run_intro(screen, clock):
             screen.blit(fade_surf, (0, 0))
             pygame.display.flip()
             clock.tick(60)
+
+        _click_sfx = None
+        try:
+            from systems.settings_manager import settings as _s
+            _click_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_dialogue_click.ogg")
+            _click_sfx.set_volume(0.3 * _s.get("sfx_volume", 1.0))
+        except Exception:
+            pass
 
         for (text, color, pause) in dialogue:
             if text == "":

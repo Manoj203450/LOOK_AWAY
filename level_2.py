@@ -248,7 +248,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
     _flood_sfx = None
     try:
         _flood_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_flood_rise.ogg")
-        _flood_sfx.set_volume(0.4 * settings.get("sfx_volume", 1.0))
+        _flood_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
     except Exception:
         pass
 
@@ -291,9 +291,11 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                         pass
                     elif pause_result == "restart":
                         if _flood_sfx: _flood_sfx.stop()
+                        if _foot_sfx:  _foot_sfx.stop()
                         return None
                     elif pause_result == "menu":
                         if _flood_sfx: _flood_sfx.stop()
+                        if _foot_sfx:  _foot_sfx.stop()
                         return "menu"
 
                 # Fuse box interaction
@@ -333,7 +335,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                 # Chest interaction
                 elif event.key == pygame.K_e and near_chest is not None:
                     item = near_chest.open()
-                    play_sfx("assets/audio/sfx/chest_open.ogg", volume=0.6)
+                    play_sfx("assets/audio/sfx/chest_open.ogg", volume=0.8)
                     if item == "wrench":
                         has_wrench = True
                         if not wrench_tutorial_shown:
@@ -402,7 +404,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                     dist = math.hypot(dx_w, dy_w)
                     if dist > 0:
                         has_wrench = False
-                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.6)
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.8)
                         wrenches.append({
                             "pos": pygame.Vector2(pcx, pcy),
                             "vel": pygame.Vector2(
@@ -425,7 +427,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
         player_sprites.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -557,7 +559,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
             wr = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
             if enemy_active and wr.colliderect(enemy.get_rect()):
                 enemy.stun(hit_x=w["pos"].x, hit_y=w["pos"].y)
-                play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.7)
+                play_sfx("assets/audio/sfx/sfx_wrench_hit.ogg", volume=0.9)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
 
@@ -622,12 +624,14 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                 pass  # show warning in draw section
             else:
                 if _flood_sfx: _flood_sfx.stop()
+                if _foot_sfx:  _foot_sfx.stop()
                 return "level3", health
 
         # DEATH CHECK
         if health <= 0:
             stop_music()
             if _flood_sfx: _flood_sfx.stop()
+            if _foot_sfx:  _foot_sfx.stop()
             run_death_screen(screen, clock)
             return
 
@@ -800,20 +804,25 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                 prompt = font.render(
                     "PRESS E TO FIX  [ FIX OTHERS FIRST ]",
                     True, (200, 100, 100))
+                _foot_sfx.stop()
             elif needs_key and not has_key:
                 prompt = font.render(
                     "PRESS E TO FIX  [ NEEDS KEY ]",
                     True, (200, 100, 100))
+                _foot_sfx.stop()
+
             else:
                 prompt = font.render(
                     "PRESS E TO FIX",
                     True, (200, 200, 100))
+                _foot_sfx.stop()
             game_surf.blit(prompt,
                            (pcx - prompt.get_width()//2, pcy - 50))
 
         if near_chest:
             prompt = font.render(
                 "PRESS E TO OPEN", True, (200, 180, 80))
+            _foot_sfx.stop()
             game_surf.blit(prompt,
                            (pcx - prompt.get_width()//2, pcy - 50))
 

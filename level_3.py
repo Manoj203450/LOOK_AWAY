@@ -366,7 +366,7 @@ def run_level3(screen, clock, start_with_wrench=False,
                     dist = math.hypot(dx_w, dy_w)
                     if dist > 0:
                         has_wrench = False
-                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.6)
+                        play_sfx("assets/audio/sfx/sfx_wrench_throw.ogg", volume=0.8)
                         wrenches.append({
                             "pos": pygame.Vector2(pcx, pcy),
                             "vel": pygame.Vector2(
@@ -389,7 +389,7 @@ def run_level3(screen, clock, start_with_wrench=False,
         player_sprites.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.25 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -497,7 +497,7 @@ def run_level3(screen, clock, start_with_wrench=False,
         any_angel_moving = not angel_b.frozen or not angel_d.frozen
         if any_angel_moving:
             if _angel_sfx and _angel_sfx.get_num_channels() == 0:
-                _angel_sfx.set_volume(0.6 * settings.get("sfx_volume", 1.0))
+                _angel_sfx.set_volume(0.75 * settings.get("sfx_volume", 1.0))
                 _angel_sfx.play(-1)
         else:
             if _angel_sfx:
@@ -734,6 +734,7 @@ def run_level3(screen, clock, start_with_wrench=False,
         if near_fuse:
             prompt = font.render(
                 "PRESS E TO FIX", True, (200, 200, 100))
+            _foot_sfx.stop()
             game_surf.blit(prompt, (pcx - prompt.get_width()//2, pcy - 50))
 
         # No wrench warning at exit

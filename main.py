@@ -17,7 +17,7 @@ from systems.settings_manager import settings
 pygame.init()
 pygame.mixer.init()
 WIDTH, HEIGHT = 1280, 720
-screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
 pygame.display.set_caption("Look Away")
 clock = pygame.time.Clock()
 
@@ -63,13 +63,9 @@ def run_game_from(level, gives_wrench, screen, clock):
         if result != "level2":
             return
         level = 2
-        music_already_playing = True
-    else:
-        music_already_playing = False
 
     if level <= 2:
-        if not music_already_playing:
-            play_music("assets/audio/audio_1.ogg", loop=True, volume=0.3)
+        play_music("assets/audio/audio_1.ogg", loop=True, volume=0.3)
         result, carry_health = play_level(run_level2, screen, clock,
                                           potion_inv=potion_inv,
                                           restart_music=False,

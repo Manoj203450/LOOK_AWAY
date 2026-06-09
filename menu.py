@@ -20,12 +20,16 @@ def run_menu(screen, clock):
         pass
 
     try:
-        font_title   = pygame.font.Font("assets/fonts/menu_font.ttf", 90)
-        font_menu    = pygame.font.Font("assets/fonts/menu_font.ttf", 32)
+        font_title = pygame.font.Font("assets/fonts/mybleedingscars_ot.otf", 90)
+    except Exception as e:
+        print(f"Title font error: {e}")
+        font_title = pygame.font.SysFont("courier", 90, bold=True)
+
+    try:
+        font_menu = pygame.font.Font("assets/fonts/menu_font.ttf", 32)
         font_tagline = pygame.font.Font("assets/fonts/menu_font.ttf", 18)
-    except:
-        font_title   = pygame.font.SysFont("courier", 90, bold=True)
-        font_menu    = pygame.font.SysFont("courier", 32)
+    except Exception:
+        font_menu = pygame.font.SysFont("courier", 32)
         font_tagline = pygame.font.SysFont("courier", 18)
 
     options  = ["START NEW GAME", "SELECT LEVEL", "SETTINGS", "CREDITS", "EXIT"]
@@ -76,8 +80,8 @@ def run_menu(screen, clock):
         screen.blit(panel, (0, 0))
 
         # TITLE
-        title1 = font_title.render("LOOK", True, WHITE)
-        title2 = font_title.render("AWAY", True, WHITE)
+        title1 = font_title.render("LOOK", True, (220, 20, 20))
+        title2 = font_title.render("AWAY", True, (220, 20, 20))
         screen.blit(title1, (80, 120))
         screen.blit(title2, (80, 210))
 
