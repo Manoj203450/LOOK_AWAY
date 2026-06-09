@@ -496,13 +496,9 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         has_fixed = any(lv.fixed for lv in levers)
         if crewmate.try_stun_player(player_pos, PLAYER_SIZE,
                                     has_fixed_levers=has_fixed):
-<<<<<<< HEAD
             player_stun_timer = 120
             play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.1)
-
-=======
             player_stun_timer = 240
->>>>>>> e5d1a5ed8a58ca740661a504786f070f282e4b10
 
         # ── wrenches ─────────────────────────────────────────────────
         for w in wrenches[:]:
