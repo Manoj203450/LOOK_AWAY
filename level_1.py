@@ -203,11 +203,12 @@ def run_level1(screen, clock, start_with_wrench=False,
                         play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
                         if all(fb.fixed for fb in fuse_boxes):
                             door_open = True
-                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.5)
+                            play_sfx("assets/audio/sfx/sfx_door_open.ogg", volume=0.6)
                 if event.key == pygame.K_q:
                     old_health = health
                     health = potion_inv.use(health, max_health)
                     if health > old_health:
+                        play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
                         potion_particles.emit(
                             pcx, pcy,
                             colour=(100, 220, 100),
@@ -224,7 +225,6 @@ def run_level1(screen, clock, start_with_wrench=False,
                             size=2,
                             lifetime=25
                         )
-                    play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
 
         # MOVEMENT
         keys = pygame.key.get_pressed()
@@ -239,7 +239,7 @@ def run_level1(screen, clock, start_with_wrench=False,
         player_sprite.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -315,7 +315,7 @@ def run_level1(screen, clock, start_with_wrench=False,
 
         if in_moonlight:
             glitch_intensity = min(100, glitch_intensity + 3)
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 1)

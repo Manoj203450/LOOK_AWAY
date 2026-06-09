@@ -95,7 +95,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
     potion_particles = ParticleSystem()
 
     if restart_music:
-        play_music("assets/audio/audio_1.ogg",
+        play_music("assets/audio/lvl2.ogg",
                loop=True, volume=0.3)
 
     WIDTH, HEIGHT = screen.get_size()
@@ -377,6 +377,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                     old_health = health
                     health = potion_inv.use(health, max_health)
                     if health > old_health:
+                        play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
                         potion_particles.emit(
                             pcx, pcy,
                             colour=(100, 220, 100),
@@ -393,7 +394,6 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                             size=2,
                             lifetime=25
                         )
-                    play_sfx("assets/audio/sfx/sfx_potion.ogg", volume=0.9)
 
 
             # Throw wrench
@@ -427,7 +427,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
         player_sprites.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -472,7 +472,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
 
         if _box_moved:
             if _box_sfx and _box_sfx.get_num_channels() == 0:
-                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _box_sfx.play()
         else:
             if _box_sfx:
@@ -517,12 +517,12 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
         # Moon flood damage
         if moon.is_flooding():
             taking_damage = True
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             health -= moon.get_flood_damage()
 
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 1)
@@ -535,7 +535,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
                          hole_rect=hole_rect)
             if enemy.get_rect().colliderect(player_rect_cur):
                 if enemy.state == "chase":
-                    play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+                    play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
                     health -= 0.5
 
         # WRENCH UPDATE
@@ -588,7 +588,7 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
 
             stop_music()
             play_music("assets/audio/moon_theme.ogg",
-                       loop=True, volume=0.5)
+                       loop=True, volume=0.99)
 
         moon.update()
 

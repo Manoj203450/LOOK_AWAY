@@ -91,7 +91,7 @@ def run_level4(screen, clock, start_with_wrench=False,
     # descent music — low and uneasy
     stop_music()
     try:
-        play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/lvl4.ogg", loop=True, volume=0.4)
     except Exception:
         pass
 
@@ -359,7 +359,7 @@ def run_level4(screen, clock, start_with_wrench=False,
 
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -405,7 +405,7 @@ def run_level4(screen, clock, start_with_wrench=False,
 
             if _box_moved:
                 if _box_sfx and _box_sfx.get_num_channels() == 0:
-                    _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                    _box_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                     _box_sfx.play()
             else:
                 if _box_sfx:
@@ -423,7 +423,7 @@ def run_level4(screen, clock, start_with_wrench=False,
             sh.update(player_pos, PLAYER_SIZE, angle,
                       CONE_ANGLE, FLASHLIGHT_RADIUS, valid_rooms=all_rooms)
             if sh.get_rect().colliderect(player_rect_cur):
-                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
                 health -= 0.84
                 glitch_intensity = min(100, glitch_intensity + 4)
                 shade_contact = True
@@ -495,7 +495,7 @@ def run_level4(screen, clock, start_with_wrench=False,
         taking_damage = tide_active and (pcy >= tide_top)
         if taking_damage:
             glitch_intensity = min(100, glitch_intensity + 3)
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             health -= 0.3
         else:
             glitch_intensity = max(0, glitch_intensity - 4)

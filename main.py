@@ -65,7 +65,7 @@ def run_game_from(level, gives_wrench, screen, clock):
         level = 2
 
     if level <= 2:
-        play_music("assets/audio/audio_1.ogg", loop=True, volume=0.3)
+        play_music("assets/audio/lvl2.ogg", loop=True, volume=0.3)
         result, carry_health = play_level(run_level2, screen, clock,
                                           potion_inv=potion_inv,
                                           restart_music=False,
@@ -78,7 +78,7 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 3:
         stop_music()
-        play_music("assets/audio/audio_2.ogg", loop=True, volume=0.3)
+        play_music("assets/audio/lvl3.ogg", loop=True, volume=0.3)
         result, carry_health = play_level(run_level3, screen, clock,
                                           start_with_wrench=True,
                                           potion_inv=potion_inv,
@@ -91,7 +91,7 @@ def run_game_from(level, gives_wrench, screen, clock):
 
     if level <= 4:
         stop_music()
-        play_music("assets/audio/moon_theme.ogg", loop=True, volume=0.4)
+        play_music("assets/audio/lvl4.ogg", loop=True, volume=0.4)
         result, carry_health = play_level(run_level4, screen, clock,
                                           start_with_wrench=True,
                                           potion_inv=potion_inv,

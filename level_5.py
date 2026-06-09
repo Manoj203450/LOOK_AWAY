@@ -393,7 +393,7 @@ def run_level5(screen, clock, start_with_wrench=True,
         player_sprites.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -436,7 +436,7 @@ def run_level5(screen, clock, start_with_wrench=True,
 
         if _box_moved:
             if _box_sfx and _box_sfx.get_num_channels() == 0:
-                _box_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _box_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _box_sfx.play()
         else:
             if _box_sfx:
@@ -493,7 +493,7 @@ def run_level5(screen, clock, start_with_wrench=True,
         for ent in [enemy_a, enemy_c]:
             if (getattr(ent, "state", "") != "stunned"
                     and player_rect.colliderect(ent.get_rect())):
-                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
                 health          -= 0.6
                 glitch_intensity = min(100, glitch_intensity + 3)
 
@@ -505,7 +505,7 @@ def run_level5(screen, clock, start_with_wrench=True,
         for shade in [shade_b, shade_c]:
             if (shade.stun_timer == 0
                     and player_rect.colliderect(shade.get_rect())):
-                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
                 health          -= 0.84
                 glitch_intensity = min(100, glitch_intensity + 4)
 
@@ -616,14 +616,14 @@ def run_level5(screen, clock, start_with_wrench=True,
         # MOONLIGHT CIRCLE DAMAGE
         for (cx, cy, r) in moon_circles:
             if math.hypot(pcx - cx, pcy - cy) < r:
-                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+                play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
                 health          -= 0.3
                 glitch_intensity = min(100, glitch_intensity + 2)
 
         # FLOOD DAMAGE
         taking_flood = tide_active and (pcy >= tide_top)
         if taking_flood:
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.075)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             health          -= 0.3
             glitch_intensity = min(100, glitch_intensity + 3)
         else:

@@ -472,7 +472,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         player_sprite.update(moving)
         if moving:
             if _foot_sfx and _foot_sfx.get_num_channels() == 0:
-                _foot_sfx.set_volume(0.5 * settings.get("sfx_volume", 1.0))
+                _foot_sfx.set_volume(0.9 * settings.get("sfx_volume", 1.0))
                 _foot_sfx.play()
         else:
             if _foot_sfx:
@@ -511,7 +511,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
         if crewmate.try_stun_player(player_pos, PLAYER_SIZE,
                                     has_fixed_levers=has_fixed):
             player_stun_timer = 120
-            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.1)
+            play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.15)
             player_stun_timer = 240
 
         # ── wrenches ─────────────────────────────────────────────────
