@@ -16,25 +16,29 @@ from systems.settings_manager import settings
 
 pygame.init()
 pygame.mixer.init()
+
+# Fixed windowed ratio size
 WIDTH, HEIGHT = 1280, 720
+<<<<<<< HEAD
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
+=======
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
+
+>>>>>>> e5d1a5ed8a58ca740661a504786f070f282e4b10
 pygame.display.set_caption("Look Away")
-clock = pygame.time.Clock()
+clock = pygame.time.Clock() # 60 fps all levels
 
 
-def play_level(level_func, screen, clock, **kwargs):
+def play_level(level_func, screen, clock, **kwargs):    # **kwargs is a wrapper for extra passed arguments
     first_run = True
     start_health = kwargs.pop("start_health", 100)
     while True:
         if first_run:
             kwargs.pop("restart_music", None)
-            result = level_func(screen, clock,
-                                start_health=start_health, **kwargs)
+            result = level_func(screen, clock, **kwargs)
         else:
             kwargs.pop("restart_music", None)
-            result = level_func(screen, clock,
-                                start_health=100,
-                                restart_music=True, **kwargs)
+            result = level_func(screen, clock, restart_music=True, **kwargs)
         first_run = False
 
         if isinstance(result, tuple):
@@ -122,7 +126,9 @@ def run_game_from(level, gives_wrench, screen, clock):
         if result == "menu":
             return
 
+# --
 # MAIN LOOP
+# --
 while True:
     choice = run_menu(screen, clock)
 

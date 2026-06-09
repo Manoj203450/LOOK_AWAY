@@ -155,8 +155,7 @@ def run_cannon_choice(screen, clock):
 # LEVEL 6
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_level6(screen, clock, start_with_wrench=True,
-               potion_inv=None, start_health=100, **kwargs):
+def run_level6(screen, clock, potion_inv=None, **kwargs):
 
     if potion_inv is None:
         potion_inv = PotionInventory()
@@ -197,7 +196,7 @@ def run_level6(screen, clock, start_with_wrench=True,
     player_pos        = pygame.Vector2(ROOM_CX - 24, ROOM_BOTTOM - 100)
     PLAYER_SIZE       = 48
     PLAYER_SPEED      = 4
-    health            = start_health
+    health            = 100
     max_health        = 100
     player_stun_timer = 0
 
@@ -209,14 +208,10 @@ def run_level6(screen, clock, start_with_wrench=True,
     )
 
     # ── PILLARS ───────────────────────────────────────────────────────
-    # Centre pillar
-    pillar_centre = StationaryBox(ROOM_CX - 35, ROOM_CY - 35, 70, 70)
-    # Left and right mid-wall pillars only — top/bottom removed as they
-    # overlap with the crewmate and player spawn positions
-    pillar_left   = StationaryBox(ROOM_LEFT  + 70, ROOM_CY - 20, 40, 40)
-    pillar_right  = StationaryBox(ROOM_RIGHT - 110, ROOM_CY - 20, 40, 40)
+    pillar_left  = StationaryBox(ROOM_LEFT  + 100,  ROOM_CY - 35, 80, 80)
+    pillar_right = StationaryBox(ROOM_RIGHT - 170, ROOM_CY - 35, 80, 80)
 
-    all_pillars = [pillar_centre, pillar_left, pillar_right]
+    all_pillars = [pillar_left, pillar_right]
 
     # ── LEVERS (four corners, inset from walls) ───────────────────────
     levers = [
@@ -501,9 +496,13 @@ def run_level6(screen, clock, start_with_wrench=True,
         has_fixed = any(lv.fixed for lv in levers)
         if crewmate.try_stun_player(player_pos, PLAYER_SIZE,
                                     has_fixed_levers=has_fixed):
+<<<<<<< HEAD
             player_stun_timer = 120
             play_sfx("assets/audio/sfx/sfx_damage.ogg", volume=0.1)
 
+=======
+            player_stun_timer = 240
+>>>>>>> e5d1a5ed8a58ca740661a504786f070f282e4b10
 
         # ── wrenches ─────────────────────────────────────────────────
         for w in wrenches[:]:

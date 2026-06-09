@@ -4,11 +4,11 @@ from systems.particles import ParticleSystem
 
 
 class Crewmate:
-    BASE_SPEED = 1.6
-    SPEED_PER_FIX = 0.6
+    BASE_SPEED = 3.5
+    SPEED_PER_FIX = 1
     SABOTAGE_RADIUS = 60
     SABOTAGE_DURATION = 120
-    STUN_COOLDOWN = 180
+    STUN_COOLDOWN = 300
 
     def __init__(self, x, y):
         self.pos = pygame.Vector2(x, y)
@@ -62,7 +62,7 @@ class Crewmate:
             self.state = "chase"
             self._move_to_player(ecx, ecy, pcx, pcy,
                                  valid_rooms, obstacle_rects)
-        elif self._sabotage_mode:
+        elif self._sabotage_mode or current_fixed in (2, 4):
             self.state = "sabotage"
             self._move_to_sabotage(ecx, ecy, fixed_levers,
                                    valid_rooms, obstacle_rects)
@@ -90,7 +90,8 @@ class Crewmate:
     def stun(self, duration=180, hit_x=None, hit_y=None):
         self.state = "stunned"
         self._stun_timer = duration
-        self._sabotage_mode = False
+        # _sabotage_mode intentionally preserved — crewmate resumes
+        # sabotage after recovering rather than defaulting back to chase
         self._sabotage_target = None
         self._sabotage_timer = 0
 
@@ -152,31 +153,39 @@ class Crewmate:
 
     def _move_to_sabotage(self, ecx, ecy, fixed_levers,
                           valid_rooms, obstacle_rects):
-        nearest = min(
-            fixed_levers,
-            key=lambda l: pygame.Vector2(ecx, ecy).distance_to(
-                pygame.Vector2(l.rect.centerx, l.rect.centery))
-        )
+        # Lock onto a target once; only re-pick if it's gone (unfixed by player)
+        if self._sabotage_target is None or self._sabotage_target not in fixed_levers:
+            self._sabotage_timer = 0
+            # At exactly 2 or 4 fixed levers, target the furthest one
+            if len(fixed_levers) in (2, 4):
+                self._sabotage_target = min(
+                    fixed_levers,
+                    key=lambda l: pygame.Vector2(ecx, ecy).distance_to(
+                        pygame.Vector2(l.rect.centerx, l.rect.centery))
+                )
+            else:
+                self._sabotage_target = max(
+                    fixed_levers,
+                    key=lambda l: pygame.Vector2(ecx, ecy).distance_to(
+                        pygame.Vector2(l.rect.centerx, l.rect.centery))
+                )
 
-        target = pygame.Vector2(nearest.rect.centerx, nearest.rect.centery)
+        target = pygame.Vector2(self._sabotage_target.rect.centerx,
+                                self._sabotage_target.rect.centery)
         direction = target - pygame.Vector2(ecx, ecy)
 
         if direction.length() < self.SABOTAGE_RADIUS:
-            if self._sabotage_target is not nearest:
-                self._sabotage_target = nearest
+            if self._sabotage_timer == 0:
                 self._sabotage_timer = self.SABOTAGE_DURATION
-            else:
-                self._sabotage_timer -= 1
-                if self._sabotage_timer <= 0:
-                    nearest.fixed = False
-                    nearest.sabotage_effect()
-                    self._sabotage_target = None
-                    self._sabotage_timer = 0
-                    self._sabotage_mode = False
-        else:
-            if self._sabotage_target is nearest:
+            self._sabotage_timer -= 1
+            if self._sabotage_timer <= 0:
+                self._sabotage_target.fixed = False
+                self._sabotage_target.sabotage_effect()
                 self._sabotage_target = None
-                self._sabotage_timer  = 0
+                self._sabotage_timer = 0
+                self._sabotage_mode = False
+        else:
+            self._sabotage_timer = 0
             self._apply_move(direction.normalize(), valid_rooms, obstacle_rects)
 
     def _apply_move(self, direction, valid_rooms, obstacle_rects):

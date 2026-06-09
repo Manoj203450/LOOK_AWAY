@@ -18,16 +18,17 @@ class Lever:
         self.particles = ParticleSystem()
 
         try:
-            sheet = pygame.image.load(
-                "assets/sprites/lever.png").convert_alpha()
+            sheet = pygame.image.load("assets/sprites/lever.png").convert_alpha()
+            # Each frame is half the total width
             frame_w = sheet.get_width() // 2
             frame_h = sheet.get_height()
-            self.img_off = pygame.transform.scale(
-                sheet.subsurface((0, 0, frame_w, frame_h)),
-                (width, height))
-            self.img_on = pygame.transform.scale(
-                sheet.subsurface((frame_w, 0, frame_w, frame_h)),
-                (width, height))
+
+            # Left frame
+            self.img_off = pygame.transform.scale(sheet.subsurface((0, 0, frame_w, frame_h)),(width, height))
+
+            # Right frame
+            self.img_on = pygame.transform.scale(sheet.subsurface((frame_w, 0, frame_w, frame_h)),(width, height))
+
         except:
             self.img_off = None
             self.img_on = None
@@ -66,6 +67,7 @@ class Lever:
                 self.particles.update()
                 return True
         else:
+            # Reset progress if player releases or walks away
             self._hold_timer = 0
 
         self.particles.update()
@@ -105,6 +107,7 @@ class Lever:
                 pygame.draw.rect(screen, self._col_unfixed, self.rect)
                 pygame.draw.rect(screen, self._col_border, self.rect, 2)
 
+        # Hold-progress bar (only shown while player is actively holding)
         if not self.fixed and self._hold_timer > 0:
             bar_w = self.rect.width
             filled_w = int(bar_w * self._hold_timer / self.ACTIVATE_DURATION)
@@ -114,11 +117,11 @@ class Lever:
             pygame.draw.rect(screen, (100, 220, 120),
                              (self.rect.x, bar_y, filled_w, 6))
 
+        # "HOLD E" prompt, only when timer is not yet running
         if not self.fixed and self._hold_timer == 0:
             try:
                 hint = font_small.render("HOLD E", True, (160, 160, 100))
-                screen.blit(hint,
-                            (self.rect.centerx - hint.get_width() // 2,
-                             self.rect.top - 18))
+                screen.blit(hint, (self.rect.centerx - hint.get_width() // 2,
+                                   self.rect.top - 18))
             except Exception:
                 pass
