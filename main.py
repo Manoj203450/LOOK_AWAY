@@ -20,7 +20,6 @@ pygame.mixer.init()
 # Fixed windowed ratio size
 WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
-screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED)
 
 pygame.display.set_caption("Look Away")
 clock = pygame.time.Clock() # 60 fps all levels
