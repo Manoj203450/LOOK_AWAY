@@ -520,20 +520,20 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
             w["life"]     -= 1
             w["rotation"] += 20
             wr        = pygame.Rect(w["pos"].x, w["pos"].y, 10, 10)
-            in_bounds = (ROOM_LEFT <= w["pos"].x <= ROOM_RIGHT and
-                         ROOM_TOP  <= w["pos"].y <= ROOM_BOTTOM)
+            in_bounds = valid_room[0].contains(wr)
+
+            if not in_bounds or w["life"] <= 0:
+                wrench_on_ground = pygame.Vector2(
+                    max(ROOM_LEFT + 10, min(ROOM_RIGHT  - 10, w["pos"].x)),
+                    max(ROOM_TOP  + 10, min(ROOM_BOTTOM - 10, w["pos"].y)))
+                wrenches.remove(w)
+                continue
+
             if wr.colliderect(crewmate.get_rect()):
                 crewmate.stun(180, hit_x=w["pos"].x, hit_y=w["pos"].y)
                 play_sfx("assets/audio/sfx/sfx_crewmate_stun.ogg", volume=0.9)
                 wrench_on_ground = pygame.Vector2(w["pos"])
                 wrenches.remove(w)
-
-            if not in_bounds or w["life"] <= 0:
-                wrench_on_ground = pygame.Vector2(
-                    max(ROOM_LEFT, min(ROOM_RIGHT,  w["pos"].x)),
-                    max(ROOM_TOP,  min(ROOM_BOTTOM, w["pos"].y)))
-                wrenches.remove(w)
-                continue
 
         if wrench_on_ground:
             gr = pygame.Rect(wrench_on_ground.x, wrench_on_ground.y, 16, 16)

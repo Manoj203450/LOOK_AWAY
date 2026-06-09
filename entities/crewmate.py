@@ -4,7 +4,7 @@ from systems.particles import ParticleSystem
 
 
 class Crewmate:
-    BASE_SPEED = 3.5
+    BASE_SPEED = 3.3
     SPEED_PER_FIX = 1
     SABOTAGE_RADIUS = 60
     SABOTAGE_DURATION = 120
