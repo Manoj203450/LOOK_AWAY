@@ -83,6 +83,11 @@ def run_level_select(screen, clock):
     running = True
     while running:
         now = pygame.time.get_ticks()
+        mx, my = pygame.mouse.get_pos()
+        for i in range(len(pages[page])):
+            cy = 180 + i * 120
+            if pygame.Rect(80, cy, WIDTH - 160, 100).collidepoint(mx, my):
+                selected = i
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -115,6 +120,23 @@ def run_level_select(screen, clock):
                             "level":        lvl["level"],
                             "gives_wrench": lvl["gives_wrench"],
                         }
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for i, lvl in enumerate(pages[page]):
+                    cy = 180 + i * 120
+                    if pygame.Rect(80, cy, WIDTH - 160, 100).collidepoint(mx, my):
+                        if lvl["unlocked"]:
+                            cap.release()
+                            return {
+                                "level": lvl["level"],
+                                "gives_wrench": lvl["gives_wrench"],
+                            }
+                # Page navigation via mouse
+                page_y = 180 + len(pages[page]) * 120 + 10
+                if pygame.Rect(WIDTH // 2 - 100, page_y, 40, 30).collidepoint(mx, my):
+                    page = max(0, page - 1)
+                if pygame.Rect(WIDTH // 2 + 60, page_y, 40, 30).collidepoint(mx, my):
+                    page = min(len(pages) - 1, page + 1)
 
         if now - last_frame_time >= frame_delay:
             ret, frame = cap.read()

@@ -118,6 +118,13 @@ def run_cannon_choice(screen, clock):
     DIM   = (100, 100, 100)
 
     while True:
+        mx, my = pygame.mouse.get_pos()
+        for i in range(len(options)):
+            opt_rect = pygame.Rect(WIDTH // 2 - 200,
+                                   HEIGHT // 2 - 20 + i * 56, 400, 45)
+            if opt_rect.collidepoint(mx, my):
+                selected = i
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -129,6 +136,13 @@ def run_cannon_choice(screen, clock):
                     selected = (selected + 1) % len(options)
                 if event.key == pygame.K_RETURN:
                     return "fire" if selected == 0 else "standdown"
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for i in range(len(options)):
+                    opt_rect = pygame.Rect(WIDTH // 2 - 200,
+                                           HEIGHT // 2 - 20 + i * 56, 400, 45)
+                    if opt_rect.collidepoint(mx, my):
+                        return "fire" if i == 0 else "standdown"
 
         screen.fill((0, 0, 0))
 
@@ -390,8 +404,8 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                 # Cannon — single press E triggers choice dialogue
                 if event.key == pygame.K_e and near_cannon \
                         and player_stun_timer == 0:
-                    choice = run_cannon_choice(screen, clock)
                     if _foot_sfx:  _foot_sfx.stop()
+                    choice = run_cannon_choice(screen, clock)
                     if choice == "fire":
                         import threading
                         def _fire_sound():

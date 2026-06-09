@@ -43,6 +43,11 @@ def run_menu(screen, clock):
     while True:
         now = pygame.time.get_ticks()
 
+        mx, my = pygame.mouse.get_pos()
+        for i in range(len(options)):
+            if pygame.Rect(80, 370 + i * 55, 340, 45).collidepoint(mx, my):
+                selected = i
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 cap.release()
@@ -56,6 +61,12 @@ def run_menu(screen, clock):
                 if event.key == pygame.K_RETURN:
                     cap.release()
                     return options[selected]
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for i in range(len(options)):
+                    if pygame.Rect(80, 370 + i * 55, 340, 45).collidepoint(mx, my):
+                        cap.release()
+                        return options[i]
 
         if now - last_frame_time >= frame_delay:
             ret, frame = cap.read()

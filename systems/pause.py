@@ -17,6 +17,8 @@ def run_pause(screen, clock, game_surf):
 
     options  = ["CONTINUE", "RESTART", "SETTINGS", "MAIN MENU"]
     selected = 0
+    PANEL_W = 400
+    PANEL_H = 370
 
     WHITE = (220, 220, 220)
     RED   = (200, 40,  40)
@@ -25,6 +27,14 @@ def run_pause(screen, clock, game_surf):
     while True:
         screen = pygame.display.get_surface()
         WIDTH, HEIGHT = screen.get_size()
+        PANEL_X = WIDTH // 2 - PANEL_W // 2
+        PANEL_Y = HEIGHT // 2 - PANEL_H // 2
+        mx, my = pygame.mouse.get_pos()
+        for i in range(len(options)):
+            if pygame.Rect(PANEL_X + 40, PANEL_Y + 120 + i * 55,
+                           PANEL_W - 80, 40).collidepoint(mx, my):
+                selected = i
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -46,6 +56,19 @@ def run_pause(screen, clock, game_surf):
                         run_settings(screen, clock)
                     elif options[selected] == "MAIN MENU":
                         return "menu"
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for i, option in enumerate(options):
+                    if pygame.Rect(PANEL_X + 40, PANEL_Y + 120 + i * 55,
+                                   PANEL_W - 80, 40).collidepoint(mx, my):
+                        if option == "CONTINUE":
+                            return "continue"
+                        elif option == "RESTART":
+                            return "restart"
+                        elif option == "SETTINGS":
+                            from settings_screen import run_settings
+                            run_settings(screen, clock)
+                        elif option == "MAIN MENU":
+                            return "menu"
 
         # Draw frozen game frame behind pause menu
         screen.blit(game_surf, (0, 0))
@@ -54,12 +77,6 @@ def run_pause(screen, clock, game_surf):
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
         screen.blit(overlay, (0, 0))
-
-        # Pause panel
-        PANEL_W = 400
-        PANEL_H = 370
-        PANEL_X = WIDTH  // 2 - PANEL_W // 2
-        PANEL_Y = HEIGHT // 2 - PANEL_H // 2
 
         panel = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
         panel.fill((10, 12, 20, 220))
