@@ -39,8 +39,8 @@ def run_credits(screen, clock):
             "Level 6, Ending Cinematic",
         ]),
         ("person", "Pieter   TP079048", [
-            "All Level Music, All Game SFX",
-            "Menu Settings, Mouse Support",
+            "Level 5, Levels BGM, Game SFX",
+            "Menu Settings with Mouse Support",
         ]),
         ("gap",),
         ("section", "TOOLS USED"),
