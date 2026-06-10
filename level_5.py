@@ -334,8 +334,8 @@ def run_level5(screen, clock, start_with_wrench=True,
                         return "menu"
 
                 if event.key == pygame.K_e and active_node is not None:
-                    result = run_fuse_puzzle(screen, clock)
                     _foot_sfx.stop()
+                    result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
                         all_nodes[active_node].fix()
                         play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
@@ -538,6 +538,7 @@ def run_level5(screen, clock, start_with_wrench=True,
                         ent.stun()
 
                     if ent is crewmate and not crewmate_spoken:
+                        if _foot_sfx:  _foot_sfx.stop()
                         crewmate_spoken = True
                         run_dialogue(screen, clock, [
                             ("Please.",                                       WHITE),
@@ -588,6 +589,7 @@ def run_level5(screen, clock, start_with_wrench=True,
                 _flood_sfx.play(-1)
 
         if tide_active and not tide_warned:
+            if _foot_sfx:  _foot_sfx.stop()
             tide_warned = True
             run_dialogue(screen, clock, [
                 ("Power restored. Something changed.",  WHITE),
@@ -644,6 +646,10 @@ def run_level5(screen, clock, start_with_wrench=True,
         # EXIT CHECK
         if door_open and player_rect.colliderect(exit_door):
             if has_wrench and not exit_done:
+                if _foot_sfx:  _foot_sfx.stop()
+                if _shade_sfx: _shade_sfx.stop()
+                if _angel_sfx: _angel_sfx.stop()
+                if _flood_sfx: _flood_sfx.stop()
                 exit_done = True
                 fade_to_black(screen, clock)
                 screen.fill((0, 0, 0))
@@ -656,10 +662,6 @@ def run_level5(screen, clock, start_with_wrench=True,
                     ("...what have I done?",                     WHITE),
                 ], black_bg=True)
                 stop_music()
-                if _foot_sfx:  _foot_sfx.stop()
-                if _shade_sfx: _shade_sfx.stop()
-                if _angel_sfx: _angel_sfx.stop()
-                if _flood_sfx: _flood_sfx.stop()
                 return "level6", health
 
         # Glimpse timer decay
