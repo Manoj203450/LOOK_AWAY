@@ -4,7 +4,7 @@ import math
 import random
 
 from systems.flashlight import draw_flashlight
-from systems.moonlight import apply_glitch
+from systems.moonlight import apply_glitch, draw_moonlight
 from systems.hud import draw_hud, set_fps
 from systems.boxes import StationaryBox, MovableBox
 from systems.fuse_puzzle import FuseBox, run_fuse_puzzle
@@ -652,9 +652,7 @@ def run_level3(screen, clock, start_with_wrench=False,
 
         # Room B beams
         for beam in moon_beams_b:
-            bs = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-            pygame.draw.polygon(bs, (200, 220, 255, 70), beam)
-            game_surf.blit(bs, (0, 0))
+            draw_moonlight(game_surf, beam)
 
         # Stationary boxes
         for sb in stat_boxes:

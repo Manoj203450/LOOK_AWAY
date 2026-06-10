@@ -1,7 +1,7 @@
 import pygame
 import random
 
-def draw_moonlight(screen, moon_beam, moon_color):
+def draw_moonlight(screen, moon_beam, moon_color=(200, 220, 255, 70)):
     WIDTH, HEIGHT = screen.get_size()
     beam_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
     pygame.draw.polygon(beam_surf, moon_color, moon_beam)
