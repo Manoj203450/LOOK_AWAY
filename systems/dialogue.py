@@ -38,6 +38,14 @@ def run_dialogue(screen, clock, lines, black_bg=False):
     except Exception:
         pass
 
+    _fast_sfx = None
+    try:
+        from systems.settings_manager import settings as _s
+        _fast_sfx = pygame.mixer.Sound("assets/audio/sfx/sfx_dialogue_fast.ogg")
+        _fast_sfx.set_volume(0.6 * _s.get("sfx_volume", 1.0))
+    except Exception:
+        pass
+
     for text, color in lines:
         displayed = ""
         done      = False
@@ -50,11 +58,13 @@ def run_dialogue(screen, clock, lines, black_bg=False):
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         if _click_sfx: _click_sfx.stop()
+                        if _fast_sfx:  _fast_sfx.stop()
                         return "skipped"
                     if event.key == pygame.K_SPACE:
                         displayed = text
                         if _click_sfx: _click_sfx.stop()
-                        done      = True
+                        if _fast_sfx:  _fast_sfx.stop()
+                        done = True
 
             if not done:
                 try:
@@ -63,8 +73,11 @@ def run_dialogue(screen, clock, lines, black_bg=False):
                 except Exception:
                     _fast = False
                 if _fast:
-                    displayed = text
-                    if _click_sfx: _click_sfx.stop()
+                    if len(displayed) < len(text):
+                        displayed = text
+                        if _fast_sfx:
+                            _fast_sfx.stop()
+                            _fast_sfx.play()
                 elif len(displayed) < len(text):
                     displayed += text[len(displayed)]
                     if _click_sfx and _click_sfx.get_num_channels() == 0:

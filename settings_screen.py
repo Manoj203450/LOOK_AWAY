@@ -218,6 +218,7 @@ def run_settings(screen, clock):
         except Exception:
             cap = None
     n_sel     = len(_SELECTABLE)
+    _row_rects = {}
 
     # Layout constants
     LBL_X     = 100      # left edge of label text
@@ -244,6 +245,11 @@ def run_settings(screen, clock):
             last_frame_time = now
         screen = pygame.display.get_surface()
         W, H   = screen.get_size()
+
+        mx, my = pygame.mouse.get_pos()
+        for item_idx, rect in _row_rects.items():
+            if rect.collidepoint(mx, my):
+                sel_pos = _SELECTABLE.index(item_idx)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -278,6 +284,18 @@ def run_settings(screen, clock):
                     if event.key in (pygame.K_RETURN, pygame.K_RIGHT, pygame.K_d):
                         run_controls(screen, clock)
 
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for item_idx, rect in _row_rects.items():
+                    if rect.collidepoint(mx, my):
+                        clicked = _ITEMS[item_idx]
+                        if clicked["type"] == "toggle":
+                            i = _val_index(clicked)
+                            settings[clicked["key"]] = clicked["values"][
+                                (i + 1) % len(clicked["values"])]
+                            _apply(clicked["key"])
+                        elif clicked["type"] == "action":
+                            run_controls(screen, clock)
+
         # ── DRAW ──────────────────────────────────────────────────────────
         _bg(screen, video_surface)
 
@@ -307,6 +325,7 @@ def run_settings(screen, clock):
                 y += DIV_H
 
             elif itype == "toggle":
+                _row_rects[idx] = pygame.Rect(80, y - 2, W - 160, ROW_H)
                 is_sel = (idx == focused_item_idx)
                 lbl_c  = RED if is_sel else WHITE
 
@@ -336,6 +355,7 @@ def run_settings(screen, clock):
                 y += ROW_H
 
             elif itype == "action":
+                _row_rects[idx] = pygame.Rect(80, y - 2, W - 160, ROW_H)
                 is_sel = (idx == focused_item_idx)
                 lbl_c  = RED if is_sel else WHITE
 
@@ -355,7 +375,7 @@ def run_settings(screen, clock):
         pygame.draw.line(screen, (50, 60, 80),
                          (80, H - 52), (W - 80, H - 52), 1)
         hint = fonts["hint"].render(
-            "W / S  navigate      A / D  change value      ESC  back",
+            "W/S  navigate    A/D or CLICK  change    ESC  back",
             True, DIM)
         screen.blit(hint, (W // 2 - hint.get_width() // 2, H - 36))
 

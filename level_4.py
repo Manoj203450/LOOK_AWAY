@@ -292,8 +292,8 @@ def run_level4(screen, clock, start_with_wrench=False,
                         return "menu"
 
                 if event.key == pygame.K_e and active_node is not None:
-                    result = run_fuse_puzzle(screen, clock)
                     _foot_sfx.stop()
+                    result = run_fuse_puzzle(screen, clock)
                     if result == "solved":
                         all_nodes[active_node].fix()
                         play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)

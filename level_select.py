@@ -89,6 +89,18 @@ def run_level_select(screen, clock):
             if pygame.Rect(80, cy, WIDTH - 160, 100).collidepoint(mx, my):
                 selected = i
 
+        # Exact page nav rects computed from font measurements
+        page_y        = 180 + len(pages[page]) * 120 + 10
+        _lt_w         = font_small.size("<")[0]
+        _mid_w        = font_small.size(f" {page + 1} / {len(pages)} ")[0]
+        _rt_w         = font_small.size(">")[0]
+        _nav_x        = WIDTH // 2 - (_lt_w + _mid_w + _rt_w) // 2
+        prev_nav_rect = pygame.Rect(_nav_x - 15, page_y - 5, _lt_w + 30, 30)
+        next_nav_rect = pygame.Rect(_nav_x + _lt_w + _mid_w - 15,
+                                    page_y - 5, _rt_w + 30, 30)
+        prev_hovered  = prev_nav_rect.collidepoint(mx, my) and page > 0
+        next_hovered  = next_nav_rect.collidepoint(mx, my) and page < len(pages) - 1
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 cap.release()
@@ -108,9 +120,11 @@ def run_level_select(screen, clock):
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     if page > 0:
                         page -= 1
+                        selected = 0
                 if event.key in (pygame.K_RIGHT, pygame.K_d):
                     if page < len(pages) - 1:
                         page += 1
+                        selected = 0
 
                 if event.key == pygame.K_RETURN:
                     lvl = pages[page][selected]
@@ -132,11 +146,12 @@ def run_level_select(screen, clock):
                                 "gives_wrench": lvl["gives_wrench"],
                             }
                 # Page navigation via mouse
-                page_y = 180 + len(pages[page]) * 120 + 10
-                if pygame.Rect(WIDTH // 2 - 100, page_y, 40, 30).collidepoint(mx, my):
+                if prev_nav_rect.collidepoint(mx, my):
                     page = max(0, page - 1)
-                if pygame.Rect(WIDTH // 2 + 60, page_y, 40, 30).collidepoint(mx, my):
+                    selected = 0
+                if next_nav_rect.collidepoint(mx, my):
                     page = min(len(pages) - 1, page + 1)
+                    selected = 0
 
         if now - last_frame_time >= frame_delay:
             ret, frame = cap.read()
@@ -165,7 +180,7 @@ def run_level_select(screen, clock):
         screen.blit(title, (80, 60))
 
         hint = font_small.render(
-            "W/S — navigate    A/D or ◄/► — switch page    ENTER — select    ESC — back",
+            "W/S — navigate    A/D or Click — switch page    ENTER — select    ESC — back",
             True, DIM)
         screen.blit(hint, (80, 120))
 
@@ -212,11 +227,21 @@ def run_level_select(screen, clock):
                 screen.blit(locked, (card_x + 45, cy + 35))
 
         # PAGE INDICATOR
-        page_str  = f"< {page + 1} / {len(pages)} >"
-        page_text = font_small.render(page_str, True, (160, 160, 200))
-        screen.blit(page_text,
-                    (WIDTH // 2 - page_text.get_width() // 2,
-                     card_y + len(pages[page]) * (card_h + gap) + 10))
+        lt_col  = (255, 255, 255) if prev_hovered \
+                  else ((60, 60, 80) if page == 0 else (160, 160, 200))
+        rt_col  = (255, 255, 255) if next_hovered \
+                  else ((60, 60, 80) if page >= len(pages) - 1 else (160, 160, 200))
+
+        lt_s   = font_small.render("<", True, lt_col)
+        mid_s  = font_small.render(f" {page + 1} / {len(pages)} ", True, (160, 160, 200))
+        rt_s   = font_small.render(">", True, rt_col)
+
+        nav_x_draw = WIDTH // 2 - (lt_s.get_width() +
+                                    mid_s.get_width() +
+                                    rt_s.get_width()) // 2
+        screen.blit(lt_s,  (nav_x_draw, page_y))
+        screen.blit(mid_s, (nav_x_draw + lt_s.get_width(), page_y))
+        screen.blit(rt_s,  (nav_x_draw + lt_s.get_width() + mid_s.get_width(), page_y))
 
         pygame.display.flip()
         clock.tick(60)

@@ -43,7 +43,7 @@ def run_death_screen(screen, clock):
     screen.fill((0, 0, 0))
     t1 = font_big.render("YOU LOOKED.",               True, (180, 30,  30))
     t2 = font_small.render("the threshold took you.", True, (100, 100, 100))
-    t3 = font_small.render("press any key to retry",  True, ( 60,  60,  60))
+    t3 = font_small.render("press any key to return", True, ( 60,  60,  60))
     screen.blit(t1, (WIDTH//2 - t1.get_width()//2, HEIGHT//2 - 80))
     screen.blit(t2, (WIDTH//2 - t2.get_width()//2, HEIGHT//2 + 10))
     screen.blit(t3, (WIDTH//2 - t3.get_width()//2, HEIGHT//2 + 80))
@@ -182,10 +182,10 @@ def run_level5(screen, clock, start_with_wrench=True,
     # Room A, Worshipper (patrol the corners, chase on sight)
     enemy_a = Enemy(ROOM_A.centerx, ROOM_A.centery)
     enemy_a.patrol_points = [
-        pygame.Vector2(ROOM_A.x + 60,      ROOM_A.y + 30),
-        pygame.Vector2(ROOM_A.right - 60,  ROOM_A.y + 30),
-        pygame.Vector2(ROOM_A.right - 60,  ROOM_A.bottom - 30),
-        pygame.Vector2(ROOM_A.x + 60,      ROOM_A.bottom - 30),
+        pygame.Vector2(ROOM_A.x + 80,      ROOM_A.y + 55),
+        pygame.Vector2(ROOM_A.right - 100, ROOM_A.y + 55),
+        pygame.Vector2(ROOM_A.right - 100, ROOM_A.bottom - 55),
+        pygame.Vector2(ROOM_A.x + 80,      ROOM_A.bottom - 55),
     ]
 
     # Room B,
@@ -426,7 +426,8 @@ def run_level5(screen, clock, start_with_wrench=True,
                 old = (mb.rect.x, mb.rect.y)
                 mb.push(dx, dy, player_rect, room_c_bounds,
                         valid_rooms=all_rooms)
-                if (mb.rect.x, mb.rect.y) == old:
+                if (mb.rect.x, mb.rect.y) == old or not in_walkable(mb.rect):
+                    mb.rect.x, mb.rect.y = old
                     if dx > 0: player_pos.x = mb.rect.left - PLAYER_SIZE
                     if dx < 0: player_pos.x = mb.rect.right
                     if dy > 0: player_pos.y = mb.rect.top - PLAYER_SIZE
