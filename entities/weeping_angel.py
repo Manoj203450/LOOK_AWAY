@@ -1,6 +1,6 @@
 import pygame
 import math
-from sprite_loader import WeepingAngelSprite
+from sprite_loader import StateSprite
 from systems.particles import ParticleSystem
 
 
@@ -11,7 +11,7 @@ class WeepingAngel:
         self.frozen = False
         self.state = "stack"
         self.speed = 2.5
-        self.sprite = WeepingAngelSprite(
+        self.sprite = StateSprite(
             "assets/sprites/weeping_angel.png",
             scale=1
         )

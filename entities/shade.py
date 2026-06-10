@@ -1,6 +1,6 @@
 import pygame
 import math
-from sprite_loader import WeepingAngelSprite
+from sprite_loader import StateSprite
 from systems.particles import ParticleSystem
 
 
@@ -13,7 +13,7 @@ class Shade:
         self.speed = speed
         self.active  = False
         self.stun_timer = 0
-        self.sprite = WeepingAngelSprite(
+        self.sprite = StateSprite(
             "assets/sprites/shade.png", scale=1)
 
         self.particles = ParticleSystem()
@@ -82,8 +82,12 @@ class Shade:
     def draw(self, screen):
         self.particles.draw(screen)
 
-        self.sprite.draw(screen, int(self.pos.x), int(self.pos.y),
-                         frozen=not self.active)
+        self.sprite.draw(
+            screen,
+            int(self.pos.x),
+            int(self.pos.y),
+            frozen=not self.active
+        )
 
         if self.stun_timer > 0:
             try:

@@ -11,7 +11,6 @@ import pygame
 
 FRAME_SIZE = 48   # each frame is 48×48 px
 
-
 class AnimatedSprite:
     def __init__(self, sheet_path: str,
                  num_frames: int,
@@ -29,7 +28,7 @@ class AnimatedSprite:
         self.frame_duration = frame_duration
         self.tick           = 0
         self.current_frame  = 0
-        self.size           = FRAME_SIZE * scale
+        self.size           = FRAME_SIZE * scale    # Frame size is 48px
 
         # Slice + scale each frame
         self.frames = []
@@ -68,13 +67,7 @@ class AnimatedSprite:
                              y - rect.height // 2 + self.size // 2))
 
 
-class WeepingAngelSprite:
-    """
-    Special-case sprite for the Weeping Angel.
-    Frame 0 = frozen/still
-    Frame 1 = moving (red-eye glow indicator)
-    """
-
+class StateSprite:
     def __init__(self, sheet_path: str, scale: int = 1):
         sheet = pygame.image.load(sheet_path).convert_alpha()
         self.size   = FRAME_SIZE * scale
@@ -89,6 +82,5 @@ class WeepingAngelSprite:
 
     def draw(self, screen: pygame.Surface, x: int, y: int,
              frozen: bool = True):
-        """frozen=True → still frame, frozen=False → glowing-eye frame."""
         frame = self.frames[0 if frozen else 1]
         screen.blit(frame, (x, y))
