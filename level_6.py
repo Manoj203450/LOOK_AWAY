@@ -418,7 +418,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
                         run_neutral_ending(screen, clock)
                     pygame.mixer.stop()
                     if _foot_sfx: _foot_sfx.stop()
-                    return "menu"
+                    return "credits"
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and has_wrench:

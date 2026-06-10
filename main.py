@@ -121,6 +121,10 @@ def run_game_from(level, gives_wrench, screen, clock):
                                           start_health=carry_health)
         if result == "menu":
             return
+        if result == "credits":
+            stop_music()
+            run_credits(screen, clock)
+            return
 
 # --
 # MAIN LOOP

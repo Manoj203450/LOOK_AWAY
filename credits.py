@@ -6,45 +6,76 @@ def run_credits(screen, clock):
     WIDTH, HEIGHT = screen.get_size()
 
     try:
-        font_title = pygame.font.Font("assets/fonts/menu_font.ttf", 48)
-        font       = pygame.font.Font("assets/fonts/menu_font.ttf", 24)
-        font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 16)
+        font_title = pygame.font.Font("assets/fonts/mybleedingscars_ot.otf", 48)
     except:
         font_title = pygame.font.SysFont("courier", 48, bold=True)
-        font       = pygame.font.SysFont("courier", 24)
-        font_small = pygame.font.SysFont("courier", 16)
 
     try:
-        bg = pygame.image.load("assets/images/menu_bg.png").convert()
-        bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
+        font = pygame.font.Font("assets/fonts/menu_font.ttf", 24)
+        font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 16)
     except:
-        bg = None
+        font = pygame.font.SysFont("courier", 24)
+        font_small = pygame.font.SysFont("courier", 16)
 
-    # Credits content
-    credits_lines = [
-        ("LOOK AWAY", (220, 220, 220), "title"),
-        ("", (0,   0,   0),  "gap"),
-        ("DEVELOPED BY", (100, 100, 100), "header"),
-        ("Manoj TP086203", (200, 200, 200), "name"),
-        ("Ruben", (200, 200, 200), "name"),
-        ("Leonardo", (200, 200, 200), "name"),
-        ("Pieter", (200, 200, 200), "name"),
-        ("", (0,   0,   0),  "gap"),
-        ("TOOLS USED", (100, 100, 100), "header"),
-        ("Python + Pygame", (180, 180, 180), "normal"),
-        ("Canva — Level Design", (180, 180, 180), "normal"),
-        ("", (0,   0,   0),  "gap"),
-        ("ASSETS", (100, 100, 100), "header"),
-        ("Background — AI Generated", (180, 180, 180), "normal"),
-        ("", (0,   0,   0),  "gap"),
-        ("SPECIAL THANKS", (100, 100, 100), "header"),
-        ("APU University!!!!!!!!", (180, 180, 180), "normal"),
-        ("", (0,   0,   0),  "gap"),
-        ("DON'T LOOK TOO LONG.", (180, 30,  30),  "tagline"),
+    WHITE = (220, 220, 220)
+    DIM = (120, 120, 120)
+    RED = (180, 30,  30)
+    HEADER = (100, 100, 100)
+    DIVIDER = (50,  50,  50)
+
+    credits_data = [
+        ("title", "LOOK AWAY", WHITE),
+        ("gap",),
+        ("section", "DEVELOPED BY"),
+        ("person", "Manoj    TP086203", [
+            "Special Effects, Game Systems",
+            "Watchers, Worshippers, Moon Entity",
+            "Levels 1, 2, 3",
+        ]),
+        ("person", "Leonardo TP081483", [
+            "Level 4, Assets, Shade Enemy",
+        ]),
+        ("person", "Ruben    TP079847", [
+            "Level 6, Ending Cinematic",
+        ]),
+        ("person", "Pieter   TP079048", [
+            "All Level Music, All Game SFX",
+            "Menu Settings, Mouse Support",
+        ]),
+        ("gap",),
+        ("section", "TOOLS USED"),
+        ("single", "Python + Pygame", (180, 180, 180)),
+        ("gap",),
+        ("section", "ASSETS"),
+        ("single", "Background — AI Generated", (180, 180, 180)),
+        ("gap",),
+        ("section", "SPECIAL THANKS"),
+        ("single", "APU University!!!!!!!!", (180, 180, 180)),
+        ("gap",),
+        ("single",  "DON'T LOOK TOO LONG.", RED),
     ]
 
-    # Scrolling
-    scroll_y = HEIGHT
+    LEFT_COL  = WIDTH // 2 - 320
+    RIGHT_COL = WIDTH // 2 + 40
+    DIVIDER_X = WIDTH // 2 + 20
+
+    def entry_height(entry):
+        if entry[0] == "gap":
+            return 30
+        if entry[0] == "title":
+            return font_title.get_height() + 16
+        if entry[0] == "section":
+            return font.get_height() + 24
+        if entry[0] == "person":
+            rows = max(1, len(entry[2]))
+            return rows * (font_small.get_height() + 6) + 16
+        if entry[0] == "single":
+            return font.get_height() + 16
+        return 0
+
+    total_height = sum(entry_height(e) for e in credits_data)
+
+    scroll_y     = float(HEIGHT)
     scroll_speed = 1.2
 
     running = True
@@ -58,58 +89,71 @@ def run_credits(screen, clock):
                                  pygame.K_SPACE):
                     return
 
-        # Draw background
-        if bg:
-            screen.blit(bg, (0, 0))
-        else:
-            screen.fill((5, 5, 15))
+        screen.fill((0, 0, 0))
 
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-
-        # Calculate total credits height first
-        total_height = 0
-        for text, color, style in credits_lines:
-            if style == "gap":
-                total_height += 20
-            elif style == "title":
-                total_height += font_title.get_height() + 12
-            else:
-                total_height += font.get_height() + 12
-
-        # Draw scrolling credits
         y = int(scroll_y)
-        for text, color, style in credits_lines:
-            if style == "gap":
-                y += 20
+
+        for entry in credits_data:
+            kind = entry[0]
+
+            if kind == "title":
+                if -font_title.get_height() < y < HEIGHT:
+                    surf = font_title.render(entry[1], True, entry[2])
+                    screen.blit(surf, (WIDTH // 2 - surf.get_width() // 2, y))
+                y += font_title.get_height() + 16
                 continue
 
-            if style == "title":
-                surf = font_title.render(text, True, color)
-            elif style in ("header", "tagline", "name"):
-                surf = font.render(text, True, color)
-            else:
-                surf = font_small.render(text, True, color)
+            if kind == "gap":
+                y += 30
+                continue
 
-            # Only draw if on screen
-            if -surf.get_height() < y < HEIGHT:
-                screen.blit(surf,
-                            (WIDTH // 2 - surf.get_width() // 2, y))
-            y += surf.get_height() + 12
+            if kind == "section":
+                if -font.get_height() < y < HEIGHT:
+                    surf = font.render(entry[1], True, HEADER)
+                    screen.blit(surf, (WIDTH // 2 - surf.get_width() // 2, y))
+                    pygame.draw.line(screen, DIVIDER,
+                                     (LEFT_COL, y + font.get_height() + 4),
+                                     (RIGHT_COL + 260, y + font.get_height() + 4), 1)
+                y += font.get_height() + 24
+                continue
 
-        # Scroll up
+            if kind == "single":
+                if -font.get_height() < y < HEIGHT:
+                    surf = font.render(entry[1], True, entry[2])
+                    screen.blit(surf, (WIDTH // 2 - surf.get_width() // 2, y))
+                y += font.get_height() + 16
+                continue
+
+            if kind == "person":
+                name  = entry[1]
+                roles = entry[2]
+                rows  = max(1, len(roles))
+                h = rows * (font_small.get_height() + 6)
+
+                if -h < y < HEIGHT:
+                    name_surf = font.render(name, True, WHITE)
+                    screen.blit(name_surf, (LEFT_COL, y))
+
+                    pygame.draw.line(screen, DIVIDER,
+                                     (DIVIDER_X, y),
+                                     (DIVIDER_X, y + h), 1)
+
+                    for j, role in enumerate(roles):
+                        role_surf = font_small.render(role, True, DIM)
+                        screen.blit(role_surf,
+                                    (RIGHT_COL,
+                                     y + j * (font_small.get_height() + 6)))
+
+                y += h + 16
+                continue
+
         scroll_y -= scroll_speed
-
-        # Reset only after everything has scrolled off the top
         if scroll_y + total_height < 0:
-            scroll_y = HEIGHT
+            scroll_y = float(HEIGHT)
 
-        # ESC hint at bottom
         hint = font_small.render(
             "ESC / SPACE / ENTER to return", True, (50, 50, 50))
-        screen.blit(hint,
-                    (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 30))
+        screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 30))
 
         pygame.display.flip()
         clock.tick(60)
