@@ -299,6 +299,7 @@ def run_level4(screen, clock, start_with_wrench=False,
                         play_sfx("assets/audio/sfx/sfx_fuse_fix.ogg", volume=0.7)
 
                 elif event.key == pygame.K_e and near_chest is not None:
+                    play_sfx("assets/audio/sfx/sfx_chest_open.ogg", volume=0.8)
                     item = near_chest.open()
                     if item == "potion":
                         if potion_inv.add():

@@ -334,8 +334,8 @@ def run_level2(screen, clock, potion_inv=None, restart_music=False, start_health
 
                 # Chest interaction
                 elif event.key == pygame.K_e and near_chest is not None:
+                    play_sfx("assets/audio/sfx/sfx_chest_open.ogg", volume=0.8)
                     item = near_chest.open()
-                    play_sfx("assets/audio/sfx/chest_open.ogg", volume=0.8)
                     if item == "wrench":
                         has_wrench = True
                         if not wrench_tutorial_shown:
