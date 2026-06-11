@@ -19,10 +19,8 @@ def play_music(path, loop=True, volume=0.5):
         print(f"Audio error: {e}")
         pass
 
-
 def stop_music():
     pygame.mixer.music.stop()
-
 
 def fade_out_music(ms=1000):
     pygame.mixer.music.fadeout(ms)

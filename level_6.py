@@ -181,7 +181,7 @@ def run_level6(screen, clock, potion_inv=None, **kwargs):
     cannon_part_timer = 0
     CANNON_PART_INTERVAL = 4
 
-    stop_music()   # silence — let the tension breathe
+    stop_music()   # silence, let the tension breathe
     try:
         play_music("assets/audio/lvl6.ogg", loop=True, volume=0.4)
     except Exception:
