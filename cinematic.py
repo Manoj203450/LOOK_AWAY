@@ -1,23 +1,7 @@
-"""
-cinematic.py — Look Away
-─────────────────────────────────────────────────────────────────────────────
-Cinematic cannon-firing ending sequence for Level 6.
-Written by Vy.
-─────────────────────────────────────────────────────────────────────────────
-"""
-
 import pygame
 import sys
 import random
 from math import cos, sin, pi as PI
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CHARGE PARTICLE
-# Spirals inward toward the cannon barrel tip from a high radius.
-# Low opacity → high opacity as it closes in.
-# Written by Vy.
-# ─────────────────────────────────────────────────────────────────────────────
 
 _PARTICLE_COLOURS = [
     (80,  160, 255),   # electric blue
@@ -30,12 +14,6 @@ _PARTICLE_COLOURS = [
 
 
 class ChargeParticle:
-    """
-    A single inward-spiralling energy particle.
-    Starts at a large radius around (cx, cy), contracts to the centre,
-    fading from near-invisible to fully opaque as it closes in.
-    """
-
     def __init__(self, cx, cy):
         self.cx       = cx
         self.cy       = cy
@@ -66,25 +44,20 @@ class ChargeParticle:
         if not (-self.size <= sx <= screen_w + self.size and
                 -self.size <= sy <= screen_h + self.size):
             return
-        s = pygame.Surface((self.size * 2 + 2, self.size * 2 + 2),
-                           pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, int(self.alpha)),
-                           (self.size + 1, self.size + 1), self.size)
+
+        s = pygame.Surface((self.size * 2 + 2, self.size * 2 + 2), pygame.SRCALPHA)
+
+        pygame.draw.circle(s, (*self.color, int(self.alpha)),(self.size + 1, self.size + 1), self.size)
+
         surface.blit(s, (sx - self.size - 1, sy - self.size - 1))
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CINEMATIC ENDING
-# Full state-machine sequence triggered when the player fires the cannon.
-# States: CHARGING → FIRING → PANNING → ABSORBING → PAUSE → MOON_RED →
-#         FADE → TEXT
-# Written by Vy.
-# ─────────────────────────────────────────────────────────────────────────────
 
 def run_cinematic_ending(screen, clock):
     WIDTH, HEIGHT = screen.get_size()
 
-    # ── fonts ─────────────────────────────────────────────────────────────
+    # --
+    # Font
+    # --
     try:
         font_big   = pygame.font.Font("assets/fonts/menu_font.ttf", 52)
         font_small = pygame.font.Font("assets/fonts/menu_font.ttf", 20)
@@ -92,7 +65,9 @@ def run_cinematic_ending(screen, clock):
         font_big   = pygame.font.SysFont("courier", 52, bold=True)
         font_small = pygame.font.SysFont("courier", 20)
 
-    # ── cannon sprite ──────────────────────────────────────────────────────
+    # --
+    # Cannon Sprite
+    # --
     cannon_img = None
     cannon_w, cannon_h = 100, 80
     try:
@@ -106,15 +81,18 @@ def run_cinematic_ending(screen, clock):
     except Exception:
         pass
 
-    # ── world-space layout ─────────────────────────────────────────────────
-    # Positive Y = downward (pygame). Moon is "above" = smaller Y.
+    # --
+    # Element positions
+    # --
     CANNON_WX     = WIDTH // 2
     CANNON_WY     = 220
-    BARREL_TIP_WY = CANNON_WY - 40     # particles converge here; laser starts here
+    BARREL_TIP_WY = CANNON_WY - 40     # particles converge here and laser starts here
     MOON_WX       = WIDTH // 2
     MOON_WY       = -560
 
-    # ── camera ────────────────────────────────────────────────────────────
+    # --
+    # Camera
+    # --
     # view_top = world-Y that maps to screen top edge.
     # screen_y = world_y - view_top
     view_top        = 0.0
@@ -123,25 +101,27 @@ def run_cinematic_ending(screen, clock):
     def to_screen(wx, wy):
         return int(wx), int(wy - view_top)
 
-    # ── fixed star field (world-space) ────────────────────────────────────
+    # --
+    # Random stars creation
+    # --
     random.seed(77)
-    STARS = [(random.randint(0, WIDTH),
-              random.randint(int(MOON_WY) - 200, int(CANNON_WY) + 400))
-             for _ in range(120)]
+    STARS = [(random.randint(0, WIDTH), random.randint(int(MOON_WY) - 200, int(CANNON_WY) + 400)) for _ in range(120)]
     random.seed()
 
-    # ── moon craters ──────────────────────────────────────────────────────
-    CRATERS      = [(-22, -18, 13), (18, 22, 9), (-6, 28, 7),
-                    (28, -12, 11), (-32, 12, 8), (10, -30, 6)]
+    # --
+    # Moon entity
+    # --
+    CRATERS      = [(-22, -18, 13), (18, 22, 9), (-6, 28, 7), (28, -12, 11), (-32, 12, 8), (10, -30, 6)]
     BASE_MOON_R  = 75
 
-    # ── helper: draw moon ─────────────────────────────────────────────────
+    # --
+    # Helper: Draw moon
+    # --
     def draw_moon(radius, red_t):
         cx, cy = to_screen(MOON_WX, MOON_WY)
         R      = max(1, int(radius))
         pad    = 40
-        s      = pygame.Surface((R * 2 + pad * 2, R * 2 + pad * 2),
-                                 pygame.SRCALPHA)
+        s      = pygame.Surface((R * 2 + pad * 2, R * 2 + pad * 2), pygame.SRCALPHA)
         mc     = (R + pad, R + pad)
 
         # glow ring
@@ -160,22 +140,20 @@ def run_cinematic_ending(screen, clock):
               255)
         pygame.draw.circle(s, bc, mc, R)
 
-        # craters — scale with moon; fade as it reddens
+        # craters scale with moon, fade as it reddens
         ca = int(255 * (1.0 - red_t * 0.85))
         for ox, oy, cr in CRATERS:
             so  = int(ox * R / BASE_MOON_R)
             so2 = int(oy * R / BASE_MOON_R)
             scr = max(1, int(cr * R / BASE_MOON_R))
-            pygame.draw.circle(s, (168, 178, 188, ca),
-                               (mc[0] + so, mc[1] + so2), scr)
+            pygame.draw.circle(s, (168, 178, 188, ca),(mc[0] + so, mc[1] + so2), scr)
 
         screen.blit(s, (cx - R - pad, cy - R - pad))
 
-    # ── helper: draw laser ────────────────────────────────────────────────
+    # --
+    # Helper: Draw laser
+    # --
     def draw_laser(alpha, absorb_frac):
-        """
-        absorb_frac 0 → full beam; 1 → fully absorbed (shrinks from moon end down).
-        """
         if alpha <= 0:
             return
         b_sx, b_sy = to_screen(CANNON_WX, BARREL_TIP_WY)
@@ -197,9 +175,10 @@ def run_cinematic_ending(screen, clock):
             ls.fill((*col, int(alpha * a_frac)))
             screen.blit(ls, (CANNON_WX - width // 2, eff_top_sy))
 
-    # ── helper: draw ship hull ────────────────────────────────────────────
+    # --
+    # Helper: Draw ship
+    # --
     def draw_ship():
-        """Grey spaceship silhouette sitting just below the cannon."""
         ship_top_wy = CANNON_WY + cannon_h // 2 + 4
         sy_top      = int(ship_top_wy - view_top)
         if sy_top > HEIGHT + 10:
@@ -256,7 +235,11 @@ def run_cinematic_ending(screen, clock):
         pygame.draw.rect(screen, (62, 65, 78),  (col_x, col_y, col_w, col_h))
         pygame.draw.rect(screen, (82, 87, 102), (col_x, col_y, col_w, col_h), 1)
 
-    # ── state machine constants ────────────────────────────────────────────
+
+
+    # --
+    # States
+    # --
     S_CHARGING  = 0
     S_FIRING    = 1
     S_PANNING   = 2
@@ -267,13 +250,13 @@ def run_cinematic_ending(screen, clock):
     S_TEXT      = 7
 
     DURATIONS = {
-        S_CHARGING:  300,   # 5 s
-        S_FIRING:     60,   # 1 s
-        S_PANNING:   150,   # 2.5 s
-        S_ABSORBING: 120,   # 2 s
-        S_PAUSE:      90,   # 1.5 s
-        S_MOON_RED:  120,   # 2 s
-        S_FADE:       90,   # 1.5 s
+        S_CHARGING:  300,   # 5s
+        S_FIRING:     60,   # 1s
+        S_PANNING:   150,   # 2.5s
+        S_ABSORBING: 120,   # 2s
+        S_PAUSE:      90,   # 1.5s
+        S_MOON_RED:  120,   # 2s
+        S_FADE:       90,   # 1.5s
     }
 
     state       = S_CHARGING
@@ -295,7 +278,9 @@ def run_cinematic_ending(screen, clock):
         ("The moon got what it wanted.",         font_big,   (160,  30,  30)),
     ]
 
-    # ── main loop ─────────────────────────────────────────────────────────
+
+
+
     while True:
         clock.tick(60)
         timer += 1
@@ -309,7 +294,9 @@ def run_cinematic_ending(screen, clock):
             if event.type == pygame.KEYDOWN and state == S_TEXT:
                 return
 
-        # ── state transitions ──────────────────────────────────────────────
+        # --
+        # Cinematic 'animation' step-by-step
+        # --
         if state == S_CHARGING:
             target_view_top = CANNON_WY - HEIGHT / 2
             if timer % 2 == 0:
@@ -352,10 +339,12 @@ def run_cinematic_ending(screen, clock):
             if timer >= dur:
                 state, timer = S_TEXT, 0
 
-        # ── smooth camera (lerp) ───────────────────────────────────────────
+        # --
+        # Smooth camera control
+        # --
         view_top += (target_view_top - view_top) * 0.04
 
-        # ── draw ──────────────────────────────────────────────────────────
+
         screen.fill((3, 3, 12))
 
         # stars
@@ -407,7 +396,7 @@ def run_cinematic_ending(screen, clock):
             ov.set_alpha(fade_alpha)
             screen.blit(ov, (0, 0))
 
-        # ending text (letter-by-letter reveal)
+        # ending text
         if state == S_TEXT:
             screen.fill((0, 0, 0))
             total_h = len(ENDING_LINES) * 60
